@@ -1,0 +1,17 @@
+# Konfigurasi rahasia
+.env
+
+# File unggahan
+uploads/
+
+# Binary hasil build
+bin/
+
+# File log
+*.log
+
+# Folder temporary (air)
+tmp/
+
+# Vendor (jika ada)
+vendor/

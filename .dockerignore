@@ -1,0 +1,10 @@
+.env
+uploads/
+bin/
+*.log
+tmp/
+.git
+.gitignore
+*.md
+migrations/
+docs/
