@@ -14,6 +14,7 @@ import (
 	"splk-backend/internal/auth"
 	"splk-backend/internal/config"
 	"splk-backend/internal/middleware"
+	"splk-backend/internal/pendaftaran"
 	"splk-backend/internal/periode"
 	"splk-backend/internal/platform/clock"
 	"splk-backend/internal/tempat"
@@ -53,16 +54,24 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	akademikRepo := akademik.NewRepository()
 	tempatRepo := tempat.NewRepository()
 	periodeRepo := periode.NewRepository()
+	pendaftaranRepo := pendaftaran.NewRepository()
 
 	// Adapter untuk ActivityLogger periode
 	actLogger := &activityLoggerAdapter{authRepo: authRepo, pool: pool}
 
-	// 5. Inisialisasi Services
+	// 5. Inisialisasi Services dan Validator Eksternal
+	// ASUMSI: A1 - validasi KRS di-stub
+	krsValidator := pendaftaran.NewStubKRSValidator()
+	// ASUMSI: A2 - validasi eligibilitas di-stub
+	eligChecker := pendaftaran.NewStubEligibilityChecker()
+	accessSvc := pendaftaran.NewAccessService(pool, pendaftaranRepo)
+
 	authSvc := auth.NewService(authRepo, pool, cfg, clk, profileResolver)
 	userSvc := user.NewService(userRepo, pool)
 	akademikSvc := akademik.NewService(akademikRepo, pool)
 	tempatSvc := tempat.NewService(tempatRepo, pool)
 	periodeSvc := periode.NewService(periodeRepo, pool, clk, actLogger)
+	pendaftaranSvc := pendaftaran.NewService(pendaftaranRepo, pool, clk, krsValidator, eligChecker, accessSvc)
 
 	// 6. Inisialisasi Handlers
 	authHandler := auth.NewHandler(authSvc)
@@ -70,6 +79,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	akademikHandler := akademik.NewHandler(akademikSvc)
 	tempatHandler := tempat.NewHandler(tempatSvc)
 	periodeHandler := periode.NewHandler(periodeSvc)
+	pendaftaranHandler := pendaftaran.NewHandler(pendaftaranSvc)
 
 	// 7. Middleware Keamanan
 	authMiddleware := middleware.Auth(cfg.JWTSecret)
@@ -91,12 +101,13 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			periode.RegisterRoutes(adminGroup, nil, periodeHandler)
 		}
 
-		// Rute Terautentikasi /api/v1/ (Akademik, Tempat, & Periode baca)
+		// Rute Terautentikasi /api/v1/ (Akademik, Tempat, Periode, & Pendaftaran)
 		authGroupGeneral := apiV1.Group("", authMiddleware)
 		{
 			akademik.RegisterRoutes(nil, authGroupGeneral, akademikHandler)
 			tempat.RegisterRoutes(nil, authGroupGeneral, tempatHandler)
 			periode.RegisterRoutes(nil, authGroupGeneral, periodeHandler)
+			pendaftaran.RegisterRoutes(authGroupGeneral, pendaftaranHandler)
 		}
 	}
 
@@ -115,12 +126,13 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			periode.RegisterRoutes(adminDirect, nil, periodeHandler)
 		}
 
-		// /tempat-program, /periode, /fakultas, /jurusan, /program-studi langsung
+		// /tempat-program, /periode, /pendaftaran, /fakultas, /jurusan, /program-studi langsung
 		authDirectGeneral := router.Group("", authMiddleware)
 		{
 			akademik.RegisterRoutes(nil, authDirectGeneral, akademikHandler)
 			tempat.RegisterRoutes(nil, authDirectGeneral, tempatHandler)
 			periode.RegisterRoutes(nil, authDirectGeneral, periodeHandler)
+			pendaftaran.RegisterRoutes(authDirectGeneral, pendaftaranHandler)
 		}
 	}
 
