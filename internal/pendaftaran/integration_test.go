@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -177,6 +178,7 @@ func TestIntegration_PendaftaranInti(t *testing.T) {
 	ctx := context.Background()
 
 	// Bersihkan data pendaftaran dan periode di test database
+	_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
 	_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 	_, _ = pool.Exec(ctx, "DELETE FROM periode")
 
@@ -382,5 +384,435 @@ func TestIntegration_PendaftaranInti(t *testing.T) {
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		require.NoError(t, err)
 		assert.Len(t, resp.Data, 2)
+	})
+}
+
+func makeMultipartRequest(url, method, token, fieldName, filename string, fileContent []byte, extraFields map[string]string) *http.Request {
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+
+	if filename != "" && len(fileContent) > 0 {
+		part, _ := writer.CreateFormFile(fieldName, filename)
+		_, _ = part.Write(fileContent)
+	}
+
+	for k, v := range extraFields {
+		_ = writer.WriteField(k, v)
+	}
+	_ = writer.Close()
+
+	req, _ := http.NewRequest(method, url, &body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	return req
+}
+
+func TestIntegration_CabangMagang(t *testing.T) {
+	pool := getTestPool(t)
+	defer pool.Close()
+
+	ctx := context.Background()
+
+	// Bersihkan data
+	_, _ = pool.Exec(ctx, "DELETE FROM log_aktivitas")
+	_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
+	_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
+	_, _ = pool.Exec(ctx, "DELETE FROM pembimbing_lapangan")
+	_, _ = pool.Exec(ctx, "DELETE FROM tempat_program")
+	_, _ = pool.Exec(ctx, "DELETE FROM periode")
+	defer func() {
+		_, _ = pool.Exec(ctx, "DELETE FROM log_aktivitas")
+		_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
+		_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
+		_, _ = pool.Exec(ctx, "DELETE FROM pembimbing_lapangan")
+		_, _ = pool.Exec(ctx, "DELETE FROM tempat_program")
+		_, _ = pool.Exec(ctx, "DELETE FROM periode")
+	}()
+
+	prodiID := ensureAkademik(t, pool)
+
+	// Setup users
+	uidMhs := setupUser(t, pool, "mhs_mg_1", "mhs_mg_1@undiksha.ac.id", "Pass123!", "mahasiswa")
+	_ = ensureMahasiswaProfile(t, pool, uidMhs, prodiID, "NIM_MG_01", "Mhs Magang Satu")
+
+	uidMhsLain := setupUser(t, pool, "mhs_mg_2", "mhs_mg_2@undiksha.ac.id", "Pass123!", "mahasiswa")
+	_ = ensureMahasiswaProfile(t, pool, uidMhsLain, prodiID, "NIM_MG_02", "Mhs Magang Dua")
+
+	uidPegawai := setupUser(t, pool, "pegawai_mg", "pegawai_mg@undiksha.ac.id", "Pass123!", "pegawai")
+	_, _ = pool.Exec(ctx, `
+		INSERT INTO pegawai (id_user, nip, nama, jabatan)
+		VALUES ($1, 'NIP_PEG_MG', 'Pegawai Magang', 'Koordinator')
+		ON CONFLICT (id_user) DO NOTHING
+	`, uidPegawai)
+
+	uidDosen := setupUser(t, pool, "dosen_mg", "dosen_mg@undiksha.ac.id", "Pass123!", "dosen")
+	var idDosenPembimbing int
+	err := pool.QueryRow(ctx, `
+		INSERT INTO dosen (id_user, nip, nama, id_prodi)
+		VALUES ($1, 'NIP_DOS_MG_1', 'Dr. Dosen Pembimbing', $2)
+		ON CONFLICT (id_user) DO UPDATE SET nama = EXCLUDED.nama
+		RETURNING id
+	`, uidDosen, prodiID).Scan(&idDosenPembimbing)
+	require.NoError(t, err)
+
+	uidDosenPenguji := setupUser(t, pool, "dosen_uji", "dosen_uji@undiksha.ac.id", "Pass123!", "dosen")
+	var idDosenPenguji int
+	err = pool.QueryRow(ctx, `
+		INSERT INTO dosen (id_user, nip, nama, id_prodi)
+		VALUES ($1, 'NIP_DOS_MG_2', 'Dr. Dosen Penguji', $2)
+		ON CONFLICT (id_user) DO UPDATE SET nama = EXCLUDED.nama
+		RETURNING id
+	`, uidDosenPenguji, prodiID).Scan(&idDosenPenguji)
+	require.NoError(t, err)
+
+	// Setup Tempat Program
+	var idTempatMagang, idTempatAM, idTempatNonaktif, idTempatLain int
+	err = pool.QueryRow(ctx, `
+		INSERT INTO tempat_program (jenis_program, nama, alamat, kota, is_aktif)
+		VALUES ('magang', 'PT Teknologi Maju', 'Jl. Sudirman 1', 'Denpasar', true)
+		RETURNING id
+	`).Scan(&idTempatMagang)
+	require.NoError(t, err)
+
+	err = pool.QueryRow(ctx, `
+		INSERT INTO tempat_program (jenis_program, nama, alamat, kota, is_aktif)
+		VALUES ('asistensi_mengajar', 'SMA Negeri 1 Singaraja', 'Jl. Veteran', 'Singaraja', true)
+		RETURNING id
+	`).Scan(&idTempatAM)
+	require.NoError(t, err)
+
+	err = pool.QueryRow(ctx, `
+		INSERT INTO tempat_program (jenis_program, nama, alamat, kota, is_aktif)
+		VALUES ('magang', 'PT Tutup', 'Jl. Renon', 'Denpasar', false)
+		RETURNING id
+	`).Scan(&idTempatNonaktif)
+	require.NoError(t, err)
+
+	err = pool.QueryRow(ctx, `
+		INSERT INTO tempat_program (jenis_program, nama, alamat, kota, is_aktif)
+		VALUES ('magang', 'PT Lain', 'Jl. Gatot Subroto', 'Denpasar', true)
+		RETURNING id
+	`).Scan(&idTempatLain)
+	require.NoError(t, err)
+
+	// Setup Pembimbing Lapangan
+	var idMentorValid, idGuruPamong, idMentorLain int
+	err = pool.QueryRow(ctx, `
+		INSERT INTO pembimbing_lapangan (jenis, id_tempat_program, nama, jabatan)
+		VALUES ('mentor', $1, 'Kak Mentor Budi', 'Lead Developer')
+		RETURNING id
+	`, idTempatMagang).Scan(&idMentorValid)
+	require.NoError(t, err)
+
+	err = pool.QueryRow(ctx, `
+		INSERT INTO pembimbing_lapangan (jenis, id_tempat_program, nama, jabatan)
+		VALUES ('guru_pamong', $1, 'Ibu Guru Ani', 'Guru Komputer')
+		RETURNING id
+	`, idTempatMagang).Scan(&idGuruPamong)
+	require.NoError(t, err)
+
+	err = pool.QueryRow(ctx, `
+		INSERT INTO pembimbing_lapangan (jenis, id_tempat_program, nama, jabatan)
+		VALUES ('mentor', $1, 'Kak Mentor Lain', 'Senior Engineer')
+		RETURNING id
+	`, idTempatLain).Scan(&idMentorLain)
+	require.NoError(t, err)
+
+	// Setup Periode Magang Aktif
+	var periodeMagangID int
+	err = pool.QueryRow(ctx, `
+		INSERT INTO periode (
+			nama, jenis_program, tahun_semester,
+			tanggal_mulai, tanggal_selesai,
+			tanggal_buka_daftar, tanggal_tutup_daftar,
+			status
+		) VALUES (
+			'Magang Nasional Gasal 2026/2027', 'magang', '2026/2027-1',
+			'2026-08-01', '2026-12-31',
+			CURRENT_DATE - INTERVAL '1 day', CURRENT_DATE + INTERVAL '10 days',
+			'aktif'
+		) RETURNING id
+	`).Scan(&periodeMagangID)
+	require.NoError(t, err)
+
+	uploadDir := t.TempDir()
+	cfg := &config.Config{
+		AppEnv:             "test",
+		JWTSecret:          "kunci-rahasia-jwt-untuk-testing-harus-minimal-32-karakter!",
+		JWTAccessTTL:       15 * time.Minute,
+		JWTRefreshTTL:      7 * 24 * time.Hour,
+		UploadDir:          uploadDir,
+		MaxUploadMB:        10,
+		CORSAllowedOrigins: []string{"*"},
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	router := app.NewRouter(cfg, pool, logger)
+
+	tokenMhs := getAuthToken(t, router, "mhs_mg_1", "Pass123!")
+	tokenMhsLain := getAuthToken(t, router, "mhs_mg_2", "Pass123!")
+	tokenPegawai := getAuthToken(t, router, "pegawai_mg", "Pass123!")
+
+	var pendaftaranID int
+
+	t.Run("1. Mahasiswa mendaftar magang -> 201 Created", func(t *testing.T) {
+		body := map[string]any{"id_periode": periodeMagangID}
+		raw, _ := json.Marshal(body)
+		req := httptest.NewRequest(http.MethodPost, "/pendaftaran", bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenMhs)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusCreated, w.Code)
+
+		var resp struct {
+			Data struct {
+				ID           int    `json:"id"`
+				Status       string `json:"status"`
+				JenisProgram string `json:"jenis_program"`
+			} `json:"data"`
+		}
+		err := json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err)
+		pendaftaranID = resp.Data.ID
+		assert.Equal(t, "diajukan", resp.Data.Status)
+		assert.Equal(t, "magang", resp.Data.JenisProgram)
+	})
+
+	t.Run("2. Penempatan magang - validasi BR-04 dan otorisasi", func(t *testing.T) {
+		url := fmt.Sprintf("/pendaftaran/%d/penempatan-magang", pendaftaranID)
+
+		// 2a. Bukan pemilik pendaftaran -> 404 (ARCHITECTURE §6)
+		payloadValid := map[string]any{
+			"id_tempat_program":      idTempatMagang,
+			"id_pembimbing_lapangan": idMentorValid,
+		}
+		raw, _ := json.Marshal(payloadValid)
+		req := httptest.NewRequest(http.MethodPut, url, bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenMhsLain)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusNotFound, w.Code)
+
+		// 2b. BR-04: Tempat berjenis asistensi_mengajar -> 422 TEMPAT_TIDAK_VALID
+		payloadAM := map[string]any{
+			"id_tempat_program":      idTempatAM,
+			"id_pembimbing_lapangan": idMentorValid,
+		}
+		raw, _ = json.Marshal(payloadAM)
+		req = httptest.NewRequest(http.MethodPut, url, bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenMhs)
+		req.Header.Set("Content-Type", "application/json")
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assert.Contains(t, w.Body.String(), "TEMPAT_TIDAK_VALID")
+
+		// 2c. BR-04: Tempat non-aktif -> 422 TEMPAT_TIDAK_VALID
+		payloadNonaktif := map[string]any{
+			"id_tempat_program":      idTempatNonaktif,
+			"id_pembimbing_lapangan": idMentorValid,
+		}
+		raw, _ = json.Marshal(payloadNonaktif)
+		req = httptest.NewRequest(http.MethodPut, url, bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenMhs)
+		req.Header.Set("Content-Type", "application/json")
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assert.Contains(t, w.Body.String(), "TEMPAT_TIDAK_VALID")
+
+		// 2d. BR-04: Pembimbing berjenis guru_pamong -> 422 PEMBIMBING_TIDAK_VALID
+		payloadGuru := map[string]any{
+			"id_tempat_program":      idTempatMagang,
+			"id_pembimbing_lapangan": idGuruPamong,
+		}
+		raw, _ = json.Marshal(payloadGuru)
+		req = httptest.NewRequest(http.MethodPut, url, bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenMhs)
+		req.Header.Set("Content-Type", "application/json")
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assert.Contains(t, w.Body.String(), "PEMBIMBING_TIDAK_VALID")
+
+		// 2e. BR-04: Mentor terdaftar di tempat lain -> 422 PEMBIMBING_TIDAK_VALID
+		payloadMentorLain := map[string]any{
+			"id_tempat_program":      idTempatMagang,
+			"id_pembimbing_lapangan": idMentorLain,
+		}
+		raw, _ = json.Marshal(payloadMentorLain)
+		req = httptest.NewRequest(http.MethodPut, url, bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenMhs)
+		req.Header.Set("Content-Type", "application/json")
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assert.Contains(t, w.Body.String(), "PEMBIMBING_TIDAK_VALID")
+
+		// 2f. Sukses penempatan valid -> 200 OK
+		raw, _ = json.Marshal(payloadValid)
+		req = httptest.NewRequest(http.MethodPut, url, bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenMhs)
+		req.Header.Set("Content-Type", "application/json")
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusOK, w.Code)
+
+		// 2g. Pengubahan ulang saat masih diajukan diizinkan -> 200 OK
+		req = httptest.NewRequest(http.MethodPut, url, bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenMhs)
+		req.Header.Set("Content-Type", "application/json")
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("3. Penetapan dosen pembimbing - validasi BR-07, role dan audit log", func(t *testing.T) {
+		url := fmt.Sprintf("/pendaftaran/%d/dosen-pembimbing", pendaftaranID)
+
+		// 3a. Mahasiswa mencoba memanggil endpoint ini -> 403 Forbidden
+		bodyDosen := map[string]any{"id_dosen": idDosenPembimbing}
+		raw, _ := json.Marshal(bodyDosen)
+		req := httptest.NewRequest(http.MethodPut, url, bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenMhs)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+
+		// 3b. Dosen tidak ditemukan -> 422 DOSEN_TIDAK_DITEMUKAN
+		bodyNotFound := map[string]any{"id_dosen": 999999}
+		raw, _ = json.Marshal(bodyNotFound)
+		req = httptest.NewRequest(http.MethodPut, url, bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenPegawai)
+		req.Header.Set("Content-Type", "application/json")
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assert.Contains(t, w.Body.String(), "DOSEN_TIDAK_DITEMUKAN")
+
+		// 3c. Pegawai menetapkan dosen pembimbing valid -> 200 OK
+		raw, _ = json.Marshal(bodyDosen)
+		req = httptest.NewRequest(http.MethodPut, url, bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenPegawai)
+		req.Header.Set("Content-Type", "application/json")
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusOK, w.Code)
+
+		// 3d. Verifikasi log_aktivitas
+		var logCount int
+		err := pool.QueryRow(ctx, `
+			SELECT COUNT(*) FROM log_aktivitas
+			WHERE action = 'tetapkan_dosen_pembimbing' AND id_user = $1
+		`, uidPegawai).Scan(&logCount)
+		require.NoError(t, err)
+		assert.Equal(t, 1, logCount)
+	})
+
+	t.Run("4. Cek detail dan kesiapan magang belum siap karena dokumen belum diunggah", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/pendaftaran/%d", pendaftaranID), nil)
+		req.Header.Set("Authorization", "Bearer "+tokenMhs)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		require.Equal(t, http.StatusOK, w.Code)
+
+		var resp struct {
+			Data struct {
+				Status   string `json:"status"`
+				Kesiapan struct {
+					Siap       bool     `json:"siap"`
+					Kekurangan []string `json:"kekurangan"`
+				} `json:"kesiapan"`
+			} `json:"data"`
+		}
+		err := json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err)
+		assert.Equal(t, "diajukan", resp.Data.Status)
+		assert.False(t, resp.Data.Kesiapan.Siap)
+		assert.Contains(t, resp.Data.Kesiapan.Kekurangan, "dokumen mou belum diunggah")
+		assert.Contains(t, resp.Data.Kesiapan.Kekurangan, "dokumen proposal belum diunggah")
+	})
+
+	t.Run("5. Unggah dokumen mou dan proposal -> pemicu transisi otomatis ke berjalan", func(t *testing.T) {
+		pdfValid := []byte("%PDF-1.4 dummy pdf content for testing transition")
+
+		// 5a. Unggah MoU
+		reqMou := makeMultipartRequest(
+			fmt.Sprintf("/pendaftaran/%d/dokumen", pendaftaranID),
+			http.MethodPost,
+			tokenMhs,
+			"file",
+			"mou.pdf",
+			pdfValid,
+			map[string]string{"jenis_dokumen": "mou"},
+		)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, reqMou)
+		require.Equal(t, http.StatusCreated, w.Code)
+
+		// Periksa status: masih diajukan (proposal belum)
+		var status string
+		err := pool.QueryRow(ctx, "SELECT status FROM peserta_program WHERE id = $1", pendaftaranID).Scan(&status)
+		require.NoError(t, err)
+		assert.Equal(t, "diajukan", status)
+
+		// 5b. Unggah Proposal -> harus memicu transisi ke berjalan!
+		reqProp := makeMultipartRequest(
+			fmt.Sprintf("/pendaftaran/%d/dokumen", pendaftaranID),
+			http.MethodPost,
+			tokenMhs,
+			"file",
+			"proposal.pdf",
+			pdfValid,
+			map[string]string{"jenis_dokumen": "proposal"},
+		)
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, reqProp)
+		require.Equal(t, http.StatusCreated, w.Code)
+
+		// Periksa status di database: sekarang harus 'berjalan'
+		err = pool.QueryRow(ctx, "SELECT status FROM peserta_program WHERE id = $1", pendaftaranID).Scan(&status)
+		require.NoError(t, err)
+		assert.Equal(t, "berjalan", status)
+
+		// Cek detail lewat GET endpoint
+		reqGet := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/pendaftaran/%d", pendaftaranID), nil)
+		reqGet.Header.Set("Authorization", "Bearer "+tokenMhs)
+		w = httptest.NewRecorder()
+		router.ServeHTTP(w, reqGet)
+		require.Equal(t, http.StatusOK, w.Code)
+
+		var resp struct {
+			Data struct {
+				Status   string `json:"status"`
+				Kesiapan struct {
+					Siap bool `json:"siap"`
+				} `json:"kesiapan"`
+			} `json:"data"`
+		}
+		err = json.Unmarshal(w.Body.Bytes(), &resp)
+		require.NoError(t, err)
+		assert.Equal(t, "berjalan", resp.Data.Status)
+		assert.True(t, resp.Data.Kesiapan.Siap)
+	})
+
+	t.Run("6. Mahasiswa mencoba mengubah penempatan saat berstatus berjalan -> 422 STATUS_TIDAK_VALID", func(t *testing.T) {
+		payloadValid := map[string]any{
+			"id_tempat_program":      idTempatMagang,
+			"id_pembimbing_lapangan": idMentorValid,
+		}
+		raw, _ := json.Marshal(payloadValid)
+		req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/pendaftaran/%d/penempatan-magang", pendaftaranID), bytes.NewReader(raw))
+		req.Header.Set("Authorization", "Bearer "+tokenMhs)
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+		assert.Contains(t, w.Body.String(), "STATUS_TIDAK_VALID")
 	})
 }

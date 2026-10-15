@@ -118,3 +118,64 @@ func (h *Handler) List(c *gin.Context) {
 
 	httpx.List(c, items, meta)
 }
+
+// PenempatanMagang menangani endpoint PUT /pendaftaran/:id/penempatan-magang.
+func (h *Handler) PenempatanMagang(c *gin.Context) {
+	actor, ok := middleware.ActorFrom(c)
+	if !ok {
+		httpx.WriteError(c, httpx.Unauthorized("UNAUTHORIZED", "autentikasi diperlukan"))
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		httpx.WriteError(c, httpx.BadRequest("ID_TIDAK_VALID", "parameter id harus berupa angka positif"))
+		return
+	}
+
+	var req PenempatanMagangRequest
+	if err := httpx.BindJSON(c, &req); err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	res, err := h.svc.PenempatanMagang(c.Request.Context(), actor, id, req)
+	if err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	httpx.OK(c, res)
+}
+
+// SetDosenPembimbing menangani endpoint PUT /pendaftaran/:id/dosen-pembimbing.
+func (h *Handler) SetDosenPembimbing(c *gin.Context) {
+	actor, ok := middleware.ActorFrom(c)
+	if !ok {
+		httpx.WriteError(c, httpx.Unauthorized("UNAUTHORIZED", "autentikasi diperlukan"))
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		httpx.WriteError(c, httpx.BadRequest("ID_TIDAK_VALID", "parameter id harus berupa angka positif"))
+		return
+	}
+
+	var req SetDosenPembimbingRequest
+	if err := httpx.BindJSON(c, &req); err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	ip := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
+	res, err := h.svc.SetDosenPembimbing(c.Request.Context(), actor, id, req, ip, userAgent)
+	if err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	httpx.OK(c, res)
+}

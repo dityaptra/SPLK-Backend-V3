@@ -80,7 +80,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	akademikSvc := akademik.NewService(akademikRepo, pool)
 	tempatSvc := tempat.NewService(tempatRepo, pool)
 	periodeSvc := periode.NewService(periodeRepo, pool, clk, actLogger)
-	pendaftaranSvc := pendaftaran.NewService(pendaftaranRepo, pool, clk, krsValidator, eligChecker, accessSvc)
+	pendaftaranSvc := pendaftaran.NewService(pendaftaranRepo, pool, clk, krsValidator, eligChecker, accessSvc, actLogger)
 	dokumenSvc := dokumen.NewService(dokumenRepo, pool, st, accessSvc, cfg)
 
 	// 6. Inisialisasi Handlers

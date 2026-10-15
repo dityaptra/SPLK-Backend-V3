@@ -31,6 +31,12 @@ type Repository interface {
 	FindDosenIDByUserID(ctx context.Context, db database.DBTX, userID int) (*int, error)
 	FindPembimbingLapanganIDByUserID(ctx context.Context, db database.DBTX, userID int) (*int, error)
 	IsAnggotaKelompokKKN(ctx context.Context, db database.DBTX, mhsID, kelompokID int) (bool, error)
+
+	FindTempatProgram(ctx context.Context, db database.DBTX, id int) (*TempatProgramCheck, error)
+	FindPembimbingLapangan(ctx context.Context, db database.DBTX, id int) (*PembimbingLapanganCheck, error)
+	FindDosen(ctx context.Context, db database.DBTX, id int) (*DosenCheck, error)
+	UpdatePenempatanMagang(ctx context.Context, db database.DBTX, idPeserta int, idTempat int, idPembimbing int) error
+	UpdateDosenPembimbing(ctx context.Context, db database.DBTX, idPeserta int, idDosen int) error
 }
 
 type pgRepository struct{}
@@ -479,4 +485,90 @@ func (r *pgRepository) IsAnggotaKelompokKKN(ctx context.Context, db database.DBT
 		return false, fmt.Errorf("cek anggota kelompok kkn: %w", err)
 	}
 	return count > 0, nil
+}
+
+func (r *pgRepository) FindTempatProgram(ctx context.Context, db database.DBTX, id int) (*TempatProgramCheck, error) {
+	const q = `
+		SELECT id, jenis_program, is_aktif
+		FROM tempat_program
+		WHERE id = $1
+	`
+	var t TempatProgramCheck
+	err := db.QueryRow(ctx, q, id).Scan(&t.ID, &t.JenisProgram, &t.IsAktif)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("find tempat program %d: %w", id, err)
+	}
+	return &t, nil
+}
+
+func (r *pgRepository) FindPembimbingLapangan(ctx context.Context, db database.DBTX, id int) (*PembimbingLapanganCheck, error) {
+	const q = `
+		SELECT id, jenis, id_tempat_program
+		FROM pembimbing_lapangan
+		WHERE id = $1
+	`
+	var pl PembimbingLapanganCheck
+	err := db.QueryRow(ctx, q, id).Scan(&pl.ID, &pl.Jenis, &pl.IDTempatProgram)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("find pembimbing lapangan %d: %w", id, err)
+	}
+	return &pl, nil
+}
+
+func (r *pgRepository) FindDosen(ctx context.Context, db database.DBTX, id int) (*DosenCheck, error) {
+	const q = `
+		SELECT id, nama
+		FROM dosen
+		WHERE id = $1
+	`
+	var d DosenCheck
+	err := db.QueryRow(ctx, q, id).Scan(&d.ID, &d.Nama)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("find dosen %d: %w", id, err)
+	}
+	return &d, nil
+}
+
+func (r *pgRepository) UpdatePenempatanMagang(ctx context.Context, db database.DBTX, idPeserta int, idTempat int, idPembimbing int) error {
+	const q = `
+		UPDATE peserta_program
+		SET id_tempat_program = $1,
+		    id_pembimbing_lapangan = $2,
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE id = $3
+	`
+	res, err := db.Exec(ctx, q, idTempat, idPembimbing, idPeserta)
+	if err != nil {
+		return fmt.Errorf("update penempatan magang peserta %d: %w", idPeserta, err)
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
+func (r *pgRepository) UpdateDosenPembimbing(ctx context.Context, db database.DBTX, idPeserta int, idDosen int) error {
+	const q = `
+		UPDATE peserta_program
+		SET id_dosen_pembimbing = $1,
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE id = $2
+	`
+	res, err := db.Exec(ctx, q, idDosen, idPeserta)
+	if err != nil {
+		return fmt.Errorf("update dosen pembimbing peserta %d: %w", idPeserta, err)
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }

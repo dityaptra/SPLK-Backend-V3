@@ -223,6 +223,15 @@ func TestIntegration_Dokumen(t *testing.T) {
 	`, now.AddDate(0, 0, -2), now.AddDate(0, 6, 0), now.AddDate(0, 0, -5), now.AddDate(0, 0, 10)).Scan(&periodeID)
 	require.NoError(t, err)
 
+	// Buat tempat program
+	var tempatID int
+	err = pool.QueryRow(ctx, `
+		INSERT INTO tempat_program (jenis_program, nama, alamat, is_aktif)
+		VALUES ('magang', 'Tempat Dokumen Test', 'Jl. Test', true)
+		RETURNING id
+	`).Scan(&tempatID)
+	require.NoError(t, err)
+
 	// Buat pendaftaran Mahasiswa A
 	var idPesertaA int
 	err = pool.QueryRow(ctx, `
@@ -230,9 +239,9 @@ func TestIntegration_Dokumen(t *testing.T) {
 			id_mahasiswa, id_periode, jenis_program,
 			id_tempat_program, status
 		) VALUES (
-			$1, $2, 'magang', 1, 'diajukan'
+			$1, $2, 'magang', $3, 'diajukan'
 		) RETURNING id
-	`, mhsAID, periodeID).Scan(&idPesertaA)
+	`, mhsAID, periodeID, tempatID).Scan(&idPesertaA)
 	require.NoError(t, err)
 
 	var docID int

@@ -14,12 +14,19 @@ import (
 	"splk-backend/internal/platform/httpx"
 )
 
+// ActivityLogger mendefinisikan antarmuka pencatatan log aktivitas audit.
+type ActivityLogger interface {
+	Log(ctx context.Context, userID int, action string, status bool, ip, userAgent string) error
+}
+
 // Service mendefinisikan seluruh use-case untuk modul pendaftaran.
 type Service interface {
 	Daftar(ctx context.Context, actor middleware.Actor, req CreatePendaftaranRequest) (*PendaftaranDetail, error)
 	AjukanUlang(ctx context.Context, actor middleware.Actor, idPeserta int) (*PendaftaranDetail, error)
 	GetDetail(ctx context.Context, actor middleware.Actor, idPeserta int) (*PendaftaranDetail, error)
 	List(ctx context.Context, actor middleware.Actor, filter PendaftaranFilter, p httpx.Pagination) ([]PendaftaranListItem, httpx.PaginationMeta, error)
+	PenempatanMagang(ctx context.Context, actor middleware.Actor, idPeserta int, req PenempatanMagangRequest) (*PendaftaranDetail, error)
+	SetDosenPembimbing(ctx context.Context, actor middleware.Actor, idPeserta int, req SetDosenPembimbingRequest, ip, userAgent string) (*PendaftaranDetail, error)
 }
 
 type pendaftaranService struct {
@@ -29,6 +36,7 @@ type pendaftaranService struct {
 	krsValidator KRSValidator
 	eligChecker  EligibilityChecker
 	access       AccessService
+	logger       ActivityLogger
 }
 
 // NewService membuat instance Service baru untuk modul pendaftaran.
@@ -39,6 +47,7 @@ func NewService(
 	krsVal KRSValidator,
 	eligCheck EligibilityChecker,
 	access AccessService,
+	logger ActivityLogger,
 ) Service {
 	return &pendaftaranService{
 		repo:         repo,
@@ -47,6 +56,7 @@ func NewService(
 		krsValidator: krsVal,
 		eligChecker:  eligCheck,
 		access:       access,
+		logger:       logger,
 	}
 }
 
@@ -322,4 +332,151 @@ func (s *pendaftaranService) List(ctx context.Context, actor middleware.Actor, f
 	}
 
 	return items, meta, nil
+}
+
+// PenempatanMagang menangani penetapan tempat magang dan mentor oleh mahasiswa pemilik.
+// Menegakkan aturan BR-04 dan menjalankan evaluasi transisi kesiapan diajukan -> berjalan.
+func (s *pendaftaranService) PenempatanMagang(ctx context.Context, actor middleware.Actor, idPeserta int, req PenempatanMagangRequest) (*PendaftaranDetail, error) {
+	// 1. Otorisasi akses: hanya mahasiswa pemilik pendaftaran yang dapat memilih penempatan
+	rel, err := s.access.Resolve(ctx, actor, idPeserta)
+	if err != nil {
+		return nil, err
+	}
+	if rel != RelMahasiswa {
+		return nil, httpx.Forbidden("AKSES_DITOLAK", "hanya mahasiswa pemilik pendaftaran yang dapat memilih penempatan magang")
+	}
+
+	// 2. Ambil pendaftaran
+	peserta, err := s.repo.FindPesertaByID(ctx, s.pool, idPeserta)
+	if err != nil {
+		return nil, fmt.Errorf("ambil peserta: %w", err)
+	}
+	if peserta == nil {
+		return nil, httpx.NotFound("PENDAFTARAN_TIDAK_DITEMUKAN", "pendaftaran tidak ditemukan")
+	}
+
+	if peserta.JenisProgram != "magang" {
+		return nil, httpx.Unprocessable("BUKAN_PROGRAM_MAGANG", "penempatan magang hanya berlaku untuk program magang")
+	}
+
+	if peserta.Status == StatusBerjalan {
+		return nil, httpx.Unprocessable("STATUS_TIDAK_VALID", "perubahan penempatan ditolak karena pendaftaran sudah berjalan")
+	}
+
+	if peserta.Status != StatusDiajukan {
+		return nil, httpx.Unprocessable("STATUS_TIDAK_VALID", "perubahan penempatan hanya dapat dilakukan saat status diajukan")
+	}
+
+	// 3. Validasi BR-04
+	// a. Tempat program harus berjenis magang dan is_aktif
+	tempat, err := s.repo.FindTempatProgram(ctx, s.pool, req.IDTempatProgram)
+	if err != nil {
+		return nil, fmt.Errorf("cek tempat program: %w", err)
+	}
+	if tempat == nil || tempat.JenisProgram != "magang" || !tempat.IsAktif {
+		return nil, httpx.Unprocessable("TEMPAT_TIDAK_VALID", "tempat program harus berjenis magang dan aktif")
+	}
+
+	// b. Pembimbing lapangan harus berjenis mentor dan terdaftar pada tempat tersebut
+	mentor, err := s.repo.FindPembimbingLapangan(ctx, s.pool, req.IDPembimbingLapangan)
+	if err != nil {
+		return nil, fmt.Errorf("cek pembimbing lapangan: %w", err)
+	}
+	if mentor == nil || mentor.Jenis != "mentor" || mentor.IDTempatProgram != req.IDTempatProgram {
+		return nil, httpx.Unprocessable("PEMBIMBING_TIDAK_VALID", "pembimbing lapangan harus berjenis mentor dan terdaftar pada tempat program yang dipilih")
+	}
+
+	// 4. Update dalam transaksi dan jalankan percobaan transisi kesiapan
+	if s.pool != nil {
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("begin tx: %w", err)
+		}
+		defer tx.Rollback(ctx)
+
+		if err := s.repo.UpdatePenempatanMagang(ctx, tx, idPeserta, req.IDTempatProgram, req.IDPembimbingLapangan); err != nil {
+			return nil, fmt.Errorf("update penempatan magang: %w", err)
+		}
+
+		_, _ = TryTransitionToBerjalan(ctx, tx, idPeserta)
+
+		if err := tx.Commit(ctx); err != nil {
+			return nil, fmt.Errorf("commit tx penempatan magang: %w", err)
+		}
+	} else {
+		if err := s.repo.UpdatePenempatanMagang(ctx, nil, idPeserta, req.IDTempatProgram, req.IDPembimbingLapangan); err != nil {
+			return nil, fmt.Errorf("update penempatan magang: %w", err)
+		}
+	}
+
+	return s.GetDetail(ctx, actor, idPeserta)
+}
+
+// SetDosenPembimbing menangani penetapan dosen pembimbing oleh pegawai (magang) atau admin (semua jenis).
+// Menegakkan aturan BR-07 dan mencatat audit ke log_aktivitas.
+func (s *pendaftaranService) SetDosenPembimbing(ctx context.Context, actor middleware.Actor, idPeserta int, req SetDosenPembimbingRequest, ip, userAgent string) (*PendaftaranDetail, error) {
+	// 1. Ambil pendaftaran
+	peserta, err := s.repo.FindPesertaByID(ctx, s.pool, idPeserta)
+	if err != nil {
+		return nil, fmt.Errorf("ambil peserta: %w", err)
+	}
+	if peserta == nil {
+		return nil, httpx.NotFound("PENDAFTARAN_TIDAK_DITEMUKAN", "pendaftaran tidak ditemukan")
+	}
+
+	// 2. Hak akses aktor:
+	// Pegawai hanya untuk program magang; Admin untuk semua jenis
+	if actor.HasRole("admin") {
+		// Admin diizinkan untuk seluruh jenis program
+	} else if actor.HasRole("pegawai") {
+		if peserta.JenisProgram != "magang" {
+			return nil, httpx.Forbidden("AKSES_DITOLAK", "pegawai hanya berwenang menetapkan dosen pembimbing untuk program magang")
+		}
+	} else {
+		return nil, httpx.Forbidden("AKSES_DITOLAK", "hanya admin atau pegawai yang dapat menetapkan dosen pembimbing")
+	}
+
+	// 3. Validasi keberadaan dosen
+	dosen, err := s.repo.FindDosen(ctx, s.pool, req.IDDosen)
+	if err != nil {
+		return nil, fmt.Errorf("cek dosen: %w", err)
+	}
+	if dosen == nil {
+		return nil, httpx.Unprocessable("DOSEN_TIDAK_DITEMUKAN", "dosen pembimbing tidak ditemukan")
+	}
+
+	// 4. Validasi BR-07: id_dosen <> id_dosen_penguji
+	if peserta.IDDosenPenguji != nil && *peserta.IDDosenPenguji == req.IDDosen {
+		return nil, httpx.Unprocessable("DOSEN_PEMBIMBING_SAMA_DENGAN_PENGUJI", "dosen pembimbing tidak boleh sama dengan dosen penguji")
+	}
+
+	// 5. Update dalam transaksi dan jalankan percobaan transisi kesiapan
+	if s.pool != nil {
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("begin tx: %w", err)
+		}
+		defer tx.Rollback(ctx)
+
+		if err := s.repo.UpdateDosenPembimbing(ctx, tx, idPeserta, req.IDDosen); err != nil {
+			return nil, fmt.Errorf("update dosen pembimbing: %w", err)
+		}
+
+		_, _ = TryTransitionToBerjalan(ctx, tx, idPeserta)
+
+		if err := tx.Commit(ctx); err != nil {
+			return nil, fmt.Errorf("commit tx dosen pembimbing: %w", err)
+		}
+	} else {
+		if err := s.repo.UpdateDosenPembimbing(ctx, nil, idPeserta, req.IDDosen); err != nil {
+			return nil, fmt.Errorf("update dosen pembimbing: %w", err)
+		}
+	}
+
+	// 6. Catat ke log_aktivitas
+	if s.logger != nil {
+		_ = s.logger.Log(ctx, actor.UserID, "tetapkan_dosen_pembimbing", true, ip, userAgent)
+	}
+
+	return s.GetDetail(ctx, actor, idPeserta)
 }

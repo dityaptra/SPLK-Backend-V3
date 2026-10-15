@@ -44,3 +44,23 @@ func SudahDinilai(p *PesertaProgram) bool {
 	}
 	return p.Status == StatusSelesai && p.NilaiAkhir != nil
 }
+
+// TempatProgramCheck menyimpan atribut tempat program untuk validasi penempatan.
+type TempatProgramCheck struct {
+	ID           int
+	JenisProgram string
+	IsAktif      bool
+}
+
+// PembimbingLapanganCheck menyimpan atribut pembimbing lapangan untuk validasi penempatan.
+type PembimbingLapanganCheck struct {
+	ID              int
+	Jenis           string
+	IDTempatProgram int
+}
+
+// DosenCheck menyimpan atribut dosen untuk validasi penetapan pembimbing/penguji.
+type DosenCheck struct {
+	ID   int
+	Nama string
+}

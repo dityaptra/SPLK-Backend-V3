@@ -16,5 +16,7 @@ func RegisterRoutes(authGroup *gin.RouterGroup, h *Handler) {
 		pendaftaranGroup.POST("/:id/ajukan-ulang", h.AjukanUlang)
 		pendaftaranGroup.GET("", h.List)
 		pendaftaranGroup.GET("/:id", h.GetByID)
+		pendaftaranGroup.PUT("/:id/penempatan-magang", h.PenempatanMagang)
+		pendaftaranGroup.PUT("/:id/dosen-pembimbing", h.SetDosenPembimbing)
 	}
 }

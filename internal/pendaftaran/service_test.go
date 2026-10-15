@@ -18,26 +18,32 @@ import (
 
 // mockPendaftaranRepo mengimplementasikan pendaftaran.Repository untuk unit testing.
 type mockPendaftaranRepo struct {
-	pesertas      map[int]*pendaftaran.PesertaProgram
-	mahasiswas    map[int]*pendaftaran.MahasiswaInfo // userID -> MahasiswaInfo
-	dosens        map[int]int                        // userID -> dosenID
-	pembimbings   map[int]int                        // userID -> plID
-	periodes      map[int]*pendaftaran.PeriodeInfo
-	periodeDates  map[int][2]*time.Time // [0] = buka, [1] = tutup
-	docsByPeserta map[int][]string
-	nextID        int
+	pesertas       map[int]*pendaftaran.PesertaProgram
+	mahasiswas     map[int]*pendaftaran.MahasiswaInfo // userID -> MahasiswaInfo
+	dosens         map[int]int                        // userID -> dosenID
+	pembimbings    map[int]int                        // userID -> plID
+	periodes       map[int]*pendaftaran.PeriodeInfo
+	periodeDates   map[int][2]*time.Time // [0] = buka, [1] = tutup
+	docsByPeserta  map[int][]string
+	tempatPrograms map[int]*pendaftaran.TempatProgramCheck
+	pembimbingLaps map[int]*pendaftaran.PembimbingLapanganCheck
+	dosensCheck    map[int]*pendaftaran.DosenCheck
+	nextID         int
 }
 
 func newMockPendaftaranRepo() *mockPendaftaranRepo {
 	return &mockPendaftaranRepo{
-		pesertas:      make(map[int]*pendaftaran.PesertaProgram),
-		mahasiswas:    make(map[int]*pendaftaran.MahasiswaInfo),
-		dosens:        make(map[int]int),
-		pembimbings:   make(map[int]int),
-		periodes:      make(map[int]*pendaftaran.PeriodeInfo),
-		periodeDates:  make(map[int][2]*time.Time),
-		docsByPeserta: make(map[int][]string),
-		nextID:        1,
+		pesertas:       make(map[int]*pendaftaran.PesertaProgram),
+		mahasiswas:     make(map[int]*pendaftaran.MahasiswaInfo),
+		dosens:         make(map[int]int),
+		pembimbings:    make(map[int]int),
+		periodes:       make(map[int]*pendaftaran.PeriodeInfo),
+		periodeDates:   make(map[int][2]*time.Time),
+		docsByPeserta:  make(map[int][]string),
+		tempatPrograms: make(map[int]*pendaftaran.TempatProgramCheck),
+		pembimbingLaps: make(map[int]*pendaftaran.PembimbingLapanganCheck),
+		dosensCheck:    make(map[int]*pendaftaran.DosenCheck),
+		nextID:         1,
 	}
 }
 
@@ -179,23 +185,68 @@ func (m *mockPendaftaranRepo) IsAnggotaKelompokKKN(ctx context.Context, db datab
 	return false, nil
 }
 
+func (m *mockPendaftaranRepo) FindTempatProgram(ctx context.Context, db database.DBTX, id int) (*pendaftaran.TempatProgramCheck, error) {
+	t, ok := m.tempatPrograms[id]
+	if !ok {
+		return nil, nil
+	}
+	return t, nil
+}
+
+func (m *mockPendaftaranRepo) FindPembimbingLapangan(ctx context.Context, db database.DBTX, id int) (*pendaftaran.PembimbingLapanganCheck, error) {
+	pl, ok := m.pembimbingLaps[id]
+	if !ok {
+		return nil, nil
+	}
+	return pl, nil
+}
+
+func (m *mockPendaftaranRepo) FindDosen(ctx context.Context, db database.DBTX, id int) (*pendaftaran.DosenCheck, error) {
+	d, ok := m.dosensCheck[id]
+	if !ok {
+		return nil, nil
+	}
+	return d, nil
+}
+
+func (m *mockPendaftaranRepo) UpdatePenempatanMagang(ctx context.Context, db database.DBTX, idPeserta int, idTempat int, idPembimbing int) error {
+	p, ok := m.pesertas[idPeserta]
+	if !ok {
+		return errors.New("peserta not found")
+	}
+	p.IDTempatProgram = &idTempat
+	p.IDPembimbingLapangan = &idPembimbing
+	return nil
+}
+
+func (m *mockPendaftaranRepo) UpdateDosenPembimbing(ctx context.Context, db database.DBTX, idPeserta int, idDosen int) error {
+	p, ok := m.pesertas[idPeserta]
+	if !ok {
+		return errors.New("peserta not found")
+	}
+	p.IDDosenPembimbing = &idDosen
+	return nil
+}
+
 // mockAccessService implementasi AccessService untuk pengujian unit service pendaftaran.
 type mockAccessService struct {
 	relMap map[int]pendaftaran.Relation
 }
 
 func (m *mockAccessService) Resolve(ctx context.Context, actor middleware.Actor, idPeserta int) (pendaftaran.Relation, error) {
+	if rel, ok := m.relMap[idPeserta]; ok {
+		return rel, nil
+	}
 	if actor.HasRole("admin") {
 		return pendaftaran.RelAdmin, nil
+	}
+	if actor.HasRole("pegawai") {
+		return pendaftaran.RelPegawai, nil
 	}
 	if actor.HasRole("mahasiswa") {
 		return pendaftaran.RelMahasiswa, nil
 	}
-	rel, ok := m.relMap[idPeserta]
-	if !ok {
-		return "", httpx.NotFound("PENDAFTARAN_TIDAK_DITEMUKAN", "pendaftaran tidak ditemukan")
-	}
-	return rel, nil
+	return "", httpx.NotFound("PENDAFTARAN_TIDAK_DITEMUKAN", "pendaftaran tidak ditemukan")
 }
 
 // mockFailingKRSValidator implementasi KRSValidator yang gagal.
@@ -364,7 +415,7 @@ func TestDaftar_BusinessRules(t *testing.T) {
 		if eligCheck == nil {
 			eligCheck = pendaftaran.NewStubEligibilityChecker()
 		}
-		svc := pendaftaran.NewService(repo, nil, clk, krsVal, eligCheck, access)
+		svc := pendaftaran.NewService(repo, nil, clk, krsVal, eligCheck, access, nil)
 		return repo, svc
 	}
 
@@ -493,7 +544,7 @@ func TestAjukanUlang(t *testing.T) {
 
 	repo := newMockPendaftaranRepo()
 	access := &mockAccessService{relMap: make(map[int]pendaftaran.Relation)}
-	svc := pendaftaran.NewService(repo, nil, clk, pendaftaran.NewStubKRSValidator(), pendaftaran.NewStubEligibilityChecker(), access)
+	svc := pendaftaran.NewService(repo, nil, clk, pendaftaran.NewStubKRSValidator(), pendaftaran.NewStubEligibilityChecker(), access, nil)
 
 	repo.mahasiswas[1] = &pendaftaran.MahasiswaInfo{ID: 10, UserID: 1, NIM: "123", Nama: "Mhs"}
 	repo.periodes[1] = &pendaftaran.PeriodeInfo{ID: 1, Status: "aktif", JenisProgram: "magang"}
@@ -667,5 +718,287 @@ func TestAccessService_Resolve(t *testing.T) {
 		var appErr *httpx.AppError
 		require.True(t, errors.As(err, &appErr))
 		assert.Equal(t, 404, appErr.HTTPStatus)
+	})
+}
+
+// mockAuditLogger mencatat audit log aktivitas untuk pengujian unit.
+type mockAuditLogger struct {
+	logs []string
+}
+
+func (m *mockAuditLogger) Log(ctx context.Context, userID int, action string, status bool, ip, userAgent string) error {
+	m.logs = append(m.logs, action)
+	return nil
+}
+
+func TestPenempatanMagang_BusinessRules(t *testing.T) {
+	ctx := context.Background()
+	now := time.Date(2026, 7, 15, 10, 0, 0, 0, time.UTC)
+	clk := clock.NewMockClock(now, time.UTC)
+
+	actorMhsPemilik := middleware.Actor{UserID: 1, Roles: []string{"mahasiswa"}}
+	actorMhsLain := middleware.Actor{UserID: 2, Roles: []string{"mahasiswa"}}
+
+	setupTest := func() (*mockPendaftaranRepo, *mockAccessService, pendaftaran.Service) {
+		repo := newMockPendaftaranRepo()
+		access := &mockAccessService{relMap: make(map[int]pendaftaran.Relation)}
+		svc := pendaftaran.NewService(repo, nil, clk, pendaftaran.NewStubKRSValidator(), pendaftaran.NewStubEligibilityChecker(), access, nil)
+
+		// Setup master data tempat & mentor
+		repo.tempatPrograms[1] = &pendaftaran.TempatProgramCheck{ID: 1, JenisProgram: "magang", IsAktif: true}
+		repo.tempatPrograms[2] = &pendaftaran.TempatProgramCheck{ID: 2, JenisProgram: "asistensi_mengajar", IsAktif: true}
+		repo.tempatPrograms[3] = &pendaftaran.TempatProgramCheck{ID: 3, JenisProgram: "magang", IsAktif: false}
+
+		repo.pembimbingLaps[10] = &pendaftaran.PembimbingLapanganCheck{ID: 10, Jenis: "mentor", IDTempatProgram: 1}
+		repo.pembimbingLaps[20] = &pendaftaran.PembimbingLapanganCheck{ID: 20, Jenis: "guru_pamong", IDTempatProgram: 2}
+		repo.pembimbingLaps[30] = &pendaftaran.PembimbingLapanganCheck{ID: 30, Jenis: "mentor", IDTempatProgram: 3} // milik tempat 3
+
+		// Setup pendaftaran magang
+		pMagang := &pendaftaran.PesertaProgram{
+			IDMahasiswa:  100,
+			IDPeriode:    1,
+			JenisProgram: "magang",
+			Status:       pendaftaran.StatusDiajukan,
+		}
+		_ = repo.CreatePeserta(ctx, nil, pMagang)
+		access.relMap[pMagang.ID] = pendaftaran.RelMahasiswa
+
+		repo.periodes[1] = &pendaftaran.PeriodeInfo{ID: 1, Status: "aktif", JenisProgram: "magang"}
+		repo.mahasiswas[1] = &pendaftaran.MahasiswaInfo{ID: 100, UserID: 1, NIM: "NIM1", Nama: "Mhs 1"}
+
+		return repo, access, svc
+	}
+
+	t.Run("BR-04: gagal tempat program berjenis asistensi_mengajar (422)", func(t *testing.T) {
+		_, _, svc := setupTest()
+		_, err := svc.PenempatanMagang(ctx, actorMhsPemilik, 1, pendaftaran.PenempatanMagangRequest{
+			IDTempatProgram:      2, // tempat AM
+			IDPembimbingLapangan: 10,
+		})
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 422, appErr.HTTPStatus)
+		assert.Equal(t, "TEMPAT_TIDAK_VALID", appErr.Code)
+	})
+
+	t.Run("BR-04: gagal tempat program non-aktif (422)", func(t *testing.T) {
+		_, _, svc := setupTest()
+		_, err := svc.PenempatanMagang(ctx, actorMhsPemilik, 1, pendaftaran.PenempatanMagangRequest{
+			IDTempatProgram:      3, // non-aktif
+			IDPembimbingLapangan: 30,
+		})
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 422, appErr.HTTPStatus)
+		assert.Equal(t, "TEMPAT_TIDAK_VALID", appErr.Code)
+	})
+
+	t.Run("BR-04: gagal pembimbing lapangan bukan mentor (guru_pamong) (422)", func(t *testing.T) {
+		_, _, svc := setupTest()
+		_, err := svc.PenempatanMagang(ctx, actorMhsPemilik, 1, pendaftaran.PenempatanMagangRequest{
+			IDTempatProgram:      1,
+			IDPembimbingLapangan: 20, // guru_pamong
+		})
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 422, appErr.HTTPStatus)
+		assert.Equal(t, "PEMBIMBING_TIDAK_VALID", appErr.Code)
+	})
+
+	t.Run("BR-04: gagal mentor terdaftar di tempat program lain (422)", func(t *testing.T) {
+		_, _, svc := setupTest()
+		_, err := svc.PenempatanMagang(ctx, actorMhsPemilik, 1, pendaftaran.PenempatanMagangRequest{
+			IDTempatProgram:      1,
+			IDPembimbingLapangan: 30, // mentor milik tempat 3
+		})
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 422, appErr.HTTPStatus)
+		assert.Equal(t, "PEMBIMBING_TIDAK_VALID", appErr.Code)
+	})
+
+	t.Run("gagal: bukan mahasiswa pemilik pendaftaran (403)", func(t *testing.T) {
+		_, access, svc := setupTest()
+		// Mahasiswa lain memiliki relasi bukan pemilik
+		access.relMap[1] = pendaftaran.RelPembimbing
+		_, err := svc.PenempatanMagang(ctx, actorMhsLain, 1, pendaftaran.PenempatanMagangRequest{
+			IDTempatProgram:      1,
+			IDPembimbingLapangan: 10,
+		})
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 403, appErr.HTTPStatus)
+	})
+
+	t.Run("gagal: pendaftaran berstatus berjalan menolak perubahan penempatan (422)", func(t *testing.T) {
+		repo, _, svc := setupTest()
+		repo.pesertas[1].Status = pendaftaran.StatusBerjalan
+
+		_, err := svc.PenempatanMagang(ctx, actorMhsPemilik, 1, pendaftaran.PenempatanMagangRequest{
+			IDTempatProgram:      1,
+			IDPembimbingLapangan: 10,
+		})
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 422, appErr.HTTPStatus)
+		assert.Equal(t, "STATUS_TIDAK_VALID", appErr.Code)
+	})
+
+	t.Run("gagal: pendaftaran berjenis bukan magang (422)", func(t *testing.T) {
+		repo, _, svc := setupTest()
+		repo.pesertas[1].JenisProgram = "asistensi_mengajar"
+
+		_, err := svc.PenempatanMagang(ctx, actorMhsPemilik, 1, pendaftaran.PenempatanMagangRequest{
+			IDTempatProgram:      1,
+			IDPembimbingLapangan: 10,
+		})
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 422, appErr.HTTPStatus)
+		assert.Equal(t, "BUKAN_PROGRAM_MAGANG", appErr.Code)
+	})
+
+	t.Run("sukses: penempatan magang valid dan pengubahan ulang saat diajukan diizinkan", func(t *testing.T) {
+		repo, _, svc := setupTest()
+
+		// Setup master data tambahan untuk pengubahan ulang
+		repo.tempatPrograms[4] = &pendaftaran.TempatProgramCheck{ID: 4, JenisProgram: "magang", IsAktif: true}
+		repo.pembimbingLaps[40] = &pendaftaran.PembimbingLapanganCheck{ID: 40, Jenis: "mentor", IDTempatProgram: 4}
+
+		// Kali pertama
+		detail, err := svc.PenempatanMagang(ctx, actorMhsPemilik, 1, pendaftaran.PenempatanMagangRequest{
+			IDTempatProgram:      1,
+			IDPembimbingLapangan: 10,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, detail)
+		assert.Equal(t, ptrInt(1), repo.pesertas[1].IDTempatProgram)
+		assert.Equal(t, ptrInt(10), repo.pesertas[1].IDPembimbingLapangan)
+
+		// Pengubahan ulang diperbolehkan selama status masih diajukan
+		detail2, err := svc.PenempatanMagang(ctx, actorMhsPemilik, 1, pendaftaran.PenempatanMagangRequest{
+			IDTempatProgram:      4,
+			IDPembimbingLapangan: 40,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, detail2)
+		assert.Equal(t, ptrInt(4), repo.pesertas[1].IDTempatProgram)
+		assert.Equal(t, ptrInt(40), repo.pesertas[1].IDPembimbingLapangan)
+	})
+}
+
+func TestSetDosenPembimbing_BusinessRules(t *testing.T) {
+	ctx := context.Background()
+	now := time.Date(2026, 7, 15, 10, 0, 0, 0, time.UTC)
+	clk := clock.NewMockClock(now, time.UTC)
+
+	actorAdmin := middleware.Actor{UserID: 2, Roles: []string{"admin"}}
+	actorPegawai := middleware.Actor{UserID: 3, Roles: []string{"pegawai"}}
+	actorMhs := middleware.Actor{UserID: 1, Roles: []string{"mahasiswa"}}
+
+	setupTest := func() (*mockPendaftaranRepo, *mockAuditLogger, pendaftaran.Service) {
+		repo := newMockPendaftaranRepo()
+		access := &mockAccessService{relMap: make(map[int]pendaftaran.Relation)}
+		logger := &mockAuditLogger{}
+		svc := pendaftaran.NewService(repo, nil, clk, pendaftaran.NewStubKRSValidator(), pendaftaran.NewStubEligibilityChecker(), access, logger)
+
+		repo.dosensCheck[100] = &pendaftaran.DosenCheck{ID: 100, Nama: "Dr. Pembimbing"}
+		repo.dosensCheck[200] = &pendaftaran.DosenCheck{ID: 200, Nama: "Dr. Penguji"}
+
+		// Pendaftaran Magang
+		pMagang := &pendaftaran.PesertaProgram{
+			ID:             1,
+			IDMahasiswa:    10,
+			IDPeriode:      1,
+			JenisProgram:   "magang",
+			Status:         pendaftaran.StatusDiajukan,
+			IDDosenPenguji: ptrInt(200), // Sudah ada dosen penguji 200
+		}
+		repo.pesertas[1] = pMagang
+		repo.periodes[1] = &pendaftaran.PeriodeInfo{ID: 1, Status: "aktif", JenisProgram: "magang"}
+		repo.mahasiswas[1] = &pendaftaran.MahasiswaInfo{ID: 10, UserID: 1, NIM: "NIM1", Nama: "Mhs 1"}
+
+		// Pendaftaran AM
+		pAM := &pendaftaran.PesertaProgram{
+			ID:           2,
+			IDMahasiswa:  11,
+			IDPeriode:    2,
+			JenisProgram: "asistensi_mengajar",
+			Status:       pendaftaran.StatusDiajukan,
+		}
+		repo.pesertas[2] = pAM
+		repo.periodes[2] = &pendaftaran.PeriodeInfo{ID: 2, Status: "aktif", JenisProgram: "asistensi_mengajar"}
+		repo.mahasiswas[11] = &pendaftaran.MahasiswaInfo{ID: 11, UserID: 11, NIM: "NIM2", Nama: "Mhs 2"}
+
+		return repo, logger, svc
+	}
+
+	t.Run("gagal: mahasiswa tidak boleh memanggil endpoint dosen-pembimbing (403)", func(t *testing.T) {
+		_, _, svc := setupTest()
+		_, err := svc.SetDosenPembimbing(ctx, actorMhs, 1, pendaftaran.SetDosenPembimbingRequest{IDDosen: 100}, "127.0.0.1", "agent")
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 403, appErr.HTTPStatus)
+	})
+
+	t.Run("gagal: pegawai tidak boleh menetapkan dosen pada pendaftaran AM (403)", func(t *testing.T) {
+		_, _, svc := setupTest()
+		_, err := svc.SetDosenPembimbing(ctx, actorPegawai, 2, pendaftaran.SetDosenPembimbingRequest{IDDosen: 100}, "127.0.0.1", "agent")
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 403, appErr.HTTPStatus)
+	})
+
+	t.Run("gagal: dosen tidak ditemukan (422)", func(t *testing.T) {
+		_, _, svc := setupTest()
+		_, err := svc.SetDosenPembimbing(ctx, actorAdmin, 1, pendaftaran.SetDosenPembimbingRequest{IDDosen: 999}, "127.0.0.1", "agent")
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 422, appErr.HTTPStatus)
+		assert.Equal(t, "DOSEN_TIDAK_DITEMUKAN", appErr.Code)
+	})
+
+	t.Run("BR-07: gagal id_dosen pembimbing sama dengan id_dosen_penguji (422)", func(t *testing.T) {
+		_, _, svc := setupTest()
+		// Pendaftaran 1 memiliki IDDosenPenguji = 200
+		_, err := svc.SetDosenPembimbing(ctx, actorAdmin, 1, pendaftaran.SetDosenPembimbingRequest{IDDosen: 200}, "127.0.0.1", "agent")
+		require.Error(t, err)
+		var appErr *httpx.AppError
+		require.True(t, errors.As(err, &appErr))
+		assert.Equal(t, 422, appErr.HTTPStatus)
+		assert.Equal(t, "DOSEN_PEMBIMBING_SAMA_DENGAN_PENGUJI", appErr.Code)
+	})
+
+	t.Run("sukses: pegawai menetapkan dosen pada pendaftaran magang dan dicatat di log_aktivitas", func(t *testing.T) {
+		repo, logger, svc := setupTest()
+		detail, err := svc.SetDosenPembimbing(ctx, actorPegawai, 1, pendaftaran.SetDosenPembimbingRequest{IDDosen: 100}, "127.0.0.1", "agent")
+		require.NoError(t, err)
+		require.NotNil(t, detail)
+		assert.Equal(t, ptrInt(100), repo.pesertas[1].IDDosenPembimbing)
+
+		// Verifikasi audit log
+		require.Equal(t, 1, len(logger.logs))
+		assert.Equal(t, "tetapkan_dosen_pembimbing", logger.logs[0])
+	})
+
+	t.Run("sukses: admin menetapkan dosen pada pendaftaran AM", func(t *testing.T) {
+		repo, logger, svc := setupTest()
+		detail, err := svc.SetDosenPembimbing(ctx, actorAdmin, 2, pendaftaran.SetDosenPembimbingRequest{IDDosen: 100}, "127.0.0.1", "agent")
+		require.NoError(t, err)
+		require.NotNil(t, detail)
+		assert.Equal(t, ptrInt(100), repo.pesertas[2].IDDosenPembimbing)
+
+		require.Equal(t, 1, len(logger.logs))
+		assert.Equal(t, "tetapkan_dosen_pembimbing", logger.logs[0])
 	})
 }
