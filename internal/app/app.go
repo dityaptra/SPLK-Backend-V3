@@ -2,6 +2,7 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"splk-backend/internal/auth"
 	"splk-backend/internal/config"
 	"splk-backend/internal/middleware"
+	"splk-backend/internal/periode"
 	"splk-backend/internal/platform/clock"
 	"splk-backend/internal/tempat"
 	"splk-backend/internal/user"
@@ -50,18 +52,24 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	userRepo := user.NewRepository()
 	akademikRepo := akademik.NewRepository()
 	tempatRepo := tempat.NewRepository()
+	periodeRepo := periode.NewRepository()
+
+	// Adapter untuk ActivityLogger periode
+	actLogger := &activityLoggerAdapter{authRepo: authRepo, pool: pool}
 
 	// 5. Inisialisasi Services
 	authSvc := auth.NewService(authRepo, pool, cfg, clk, profileResolver)
 	userSvc := user.NewService(userRepo, pool)
 	akademikSvc := akademik.NewService(akademikRepo, pool)
 	tempatSvc := tempat.NewService(tempatRepo, pool)
+	periodeSvc := periode.NewService(periodeRepo, pool, clk, actLogger)
 
 	// 6. Inisialisasi Handlers
 	authHandler := auth.NewHandler(authSvc)
 	userHandler := user.NewHandler(userSvc)
 	akademikHandler := akademik.NewHandler(akademikSvc)
 	tempatHandler := tempat.NewHandler(tempatSvc)
+	periodeHandler := periode.NewHandler(periodeSvc)
 
 	// 7. Middleware Keamanan
 	authMiddleware := middleware.Auth(cfg.JWTSecret)
@@ -80,13 +88,15 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			user.RegisterAdminRoutes(adminGroup, userHandler)
 			akademik.RegisterRoutes(adminGroup, nil, akademikHandler)
 			tempat.RegisterRoutes(adminGroup, nil, tempatHandler)
+			periode.RegisterRoutes(adminGroup, nil, periodeHandler)
 		}
 
-		// Rute Terautentikasi /api/v1/ (Akademik & Tempat Program baca)
+		// Rute Terautentikasi /api/v1/ (Akademik, Tempat, & Periode baca)
 		authGroupGeneral := apiV1.Group("", authMiddleware)
 		{
 			akademik.RegisterRoutes(nil, authGroupGeneral, akademikHandler)
 			tempat.RegisterRoutes(nil, authGroupGeneral, tempatHandler)
+			periode.RegisterRoutes(nil, authGroupGeneral, periodeHandler)
 		}
 	}
 
@@ -102,13 +112,15 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			user.RegisterAdminRoutes(adminDirect, userHandler)
 			akademik.RegisterRoutes(adminDirect, nil, akademikHandler)
 			tempat.RegisterRoutes(adminDirect, nil, tempatHandler)
+			periode.RegisterRoutes(adminDirect, nil, periodeHandler)
 		}
 
-		// /tempat-program, /fakultas, /jurusan, /program-studi langsung
+		// /tempat-program, /periode, /fakultas, /jurusan, /program-studi langsung
 		authDirectGeneral := router.Group("", authMiddleware)
 		{
 			akademik.RegisterRoutes(nil, authDirectGeneral, akademikHandler)
 			tempat.RegisterRoutes(nil, authDirectGeneral, tempatHandler)
+			periode.RegisterRoutes(nil, authDirectGeneral, periodeHandler)
 		}
 	}
 
@@ -143,4 +155,35 @@ func HealthHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			"database": "up",
 		})
 	}
+}
+
+// activityLoggerAdapter mengadaptasi auth.Repository untuk implementasi periode.ActivityLogger.
+type activityLoggerAdapter struct {
+	authRepo auth.Repository
+	pool     *pgxpool.Pool
+}
+
+func (a *activityLoggerAdapter) Log(ctx context.Context, userID int, action string, status bool, ip, userAgent string) error {
+	u, err := a.authRepo.FindUserByID(ctx, a.pool, userID)
+	namaUser := "Unknown"
+	if err == nil && u != nil {
+		namaUser = u.Username
+	}
+
+	var ipPtr, uaPtr *string
+	if ip != "" {
+		ipPtr = &ip
+	}
+	if userAgent != "" {
+		uaPtr = &userAgent
+	}
+
+	return a.authRepo.CreateLogAktivitas(ctx, a.pool, &auth.LogAktivitas{
+		UserID:       userID,
+		NamaUser:     namaUser,
+		IPUser:       ipPtr,
+		AgentBrowser: uaPtr,
+		Action:       action,
+		Status:       status,
+	})
 }
