@@ -157,6 +157,9 @@ func TestIntegration_PeriodeLifecycle(t *testing.T) {
 	ctx := context.Background()
 
 	// Bersihkan data periode dan peserta sebelumnya di database test
+	_, _ = pool.Exec(ctx, "DELETE FROM penilaian")
+	_, _ = pool.Exec(ctx, "DELETE FROM jurnal_harian")
+	_, _ = pool.Exec(ctx, "DELETE FROM logbook_bimbingan")
 	_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
 	_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 	_, _ = pool.Exec(ctx, "DELETE FROM kelompok_kkn")

@@ -1,4 +1,22 @@
-// Package main adalah titik masuk server API SPLK.
+// @title SPLK Backend API
+// @version 1.0
+// @description Dokumentasi REST API Sistem Pengelolaan Magang, Asistensi Mengajar, dan KKN (SPLK) UPA TIK Undiksha.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name UPA TIK Undiksha
+// @contact.email tik@undiksha.ac.id
+
+// @license.name Proprietary
+// @license.url https://undiksha.ac.id
+
+// @host localhost:8080
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Format token: "Bearer <token_jwt>"
+
 package main
 
 import (

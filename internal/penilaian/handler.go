@@ -21,7 +21,17 @@ func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// CreateInstrumen menangani POST /admin/instrumen-penilaian.
+// CreateInstrumen godoc
+// @Summary Tambah instrumen penilaian (admin)
+// @Tags Penilaian
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body CreateInstrumenRequest true "Data instrumen baru"
+// @Success 201 {object} InstrumenResponse
+// @Failure 400 {object} httpx.AppError
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/instrumen-penilaian [post]
 func (h *Handler) CreateInstrumen(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -44,7 +54,15 @@ func (h *Handler) CreateInstrumen(c *gin.Context) {
 	httpx.Created(c, res)
 }
 
-// GetInstrumen menangani GET /admin/instrumen-penilaian/:id.
+// GetInstrumen godoc
+// @Summary Detail instrumen penilaian
+// @Tags Penilaian
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Instrumen"
+// @Success 200 {object} InstrumenResponse
+// @Failure 404 {object} httpx.AppError
+// @Router /admin/instrumen-penilaian/{id} [get]
 func (h *Handler) GetInstrumen(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id <= 0 {
@@ -61,7 +79,17 @@ func (h *Handler) GetInstrumen(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// UpdateInstrumen menangani PUT /admin/instrumen-penilaian/:id.
+// UpdateInstrumen godoc
+// @Summary Perbarui instrumen penilaian
+// @Tags Penilaian
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Instrumen"
+// @Param request body UpdateInstrumenRequest true "Data perubahan instrumen"
+// @Success 200 {object} InstrumenResponse
+// @Failure 404 {object} httpx.AppError
+// @Router /admin/instrumen-penilaian/{id} [put]
 func (h *Handler) UpdateInstrumen(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -94,7 +122,15 @@ func (h *Handler) UpdateInstrumen(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// DeleteInstrumen menangani DELETE /admin/instrumen-penilaian/:id.
+// DeleteInstrumen godoc
+// @Summary Hapus instrumen penilaian
+// @Tags Penilaian
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Instrumen"
+// @Success 200 {object} map[string]string
+// @Failure 404 {object} httpx.AppError
+// @Router /admin/instrumen-penilaian/{id} [delete]
 func (h *Handler) DeleteInstrumen(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -120,7 +156,15 @@ func (h *Handler) DeleteInstrumen(c *gin.Context) {
 	httpx.OK(c, gin.H{"pesan": "instrumen penilaian berhasil dihapus"})
 }
 
-// ListInstrumen menangani GET /admin/instrumen-penilaian.
+// ListInstrumen godoc
+// @Summary Daftar instrumen penilaian
+// @Tags Penilaian
+// @Security BearerAuth
+// @Produce json
+// @Param jenis_program query string false "Filter jenis program"
+// @Param role_penilai query string false "Filter role penilai"
+// @Success 200 {array} InstrumenResponse
+// @Router /admin/instrumen-penilaian [get]
 func (h *Handler) ListInstrumen(c *gin.Context) {
 	jenis := c.Query("jenis_program")
 	role := c.Query("role_penilai")
@@ -134,7 +178,13 @@ func (h *Handler) ListInstrumen(c *gin.Context) {
 	httpx.OK(c, items)
 }
 
-// GetRingkasanBobot menangani GET /admin/instrumen-penilaian/ringkasan.
+// GetRingkasanBobot godoc
+// @Summary Ringkasan total bobot per program dan role penilai
+// @Tags Penilaian
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} RingkasanBobotResponse
+// @Router /admin/instrumen-penilaian/ringkasan [get]
 func (h *Handler) GetRingkasanBobot(c *gin.Context) {
 	res, err := h.svc.GetRingkasanBobot(c.Request.Context())
 	if err != nil {
@@ -145,7 +195,16 @@ func (h *Handler) GetRingkasanBobot(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// GetFormPenilaian menangani GET /pendaftaran/:id/form-penilaian.
+// GetFormPenilaian godoc
+// @Summary Form instrumen penilaian untuk penilai sah
+// @Tags Penilaian
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Success 200 {object} FormPenilaianResponse
+// @Failure 403 {object} httpx.AppError
+// @Failure 404 {object} httpx.AppError
+// @Router /pendaftaran/{id}/form-penilaian [get]
 func (h *Handler) GetFormPenilaian(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -168,7 +227,19 @@ func (h *Handler) GetFormPenilaian(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// SubmitPenilaian menangani POST /pendaftaran/:id/penilaian.
+// SubmitPenilaian godoc
+// @Summary Kirim penilaian peserta (penilai sah)
+// @Description Mengisi penilaian per instrumen. Bila seluruh instrumen dari seluruh penilai telah terisi, nilai akhir dihitung otomatis dan dikunci.
+// @Tags Penilaian
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param request body SubmitPenilaianRequest true "Daftar nilai instrumen"
+// @Success 200 {object} SubmitPenilaianResponse
+// @Failure 403 {object} httpx.AppError
+// @Failure 422 {object} httpx.AppError
+// @Router /pendaftaran/{id}/penilaian [post]
 func (h *Handler) SubmitPenilaian(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -197,7 +268,16 @@ func (h *Handler) SubmitPenilaian(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// GetNilai menangani GET /pendaftaran/:id/nilai.
+// GetNilai godoc
+// @Summary Rincian nilai dan nilai akhir peserta
+// @Description Menampilkan rincian nilai. Mahasiswa pemilik hanya dapat melihat rincian setelah nilai akhir terisi.
+// @Tags Penilaian
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Success 200 {object} RincianNilaiResponse
+// @Failure 403 {object} httpx.AppError
+// @Router /pendaftaran/{id}/nilai [get]
 func (h *Handler) GetNilai(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -220,7 +300,15 @@ func (h *Handler) GetNilai(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// HitungNilaiManual menangani POST /admin/pendaftaran/:id/hitung-nilai.
+// HitungNilaiManual godoc
+// @Summary Hitung manual nilai akhir oleh admin
+// @Tags Penilaian
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Success 200 {object} HitungNilaiManualResponse
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/pendaftaran/{id}/hitung-nilai [post]
 func (h *Handler) HitungNilaiManual(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {

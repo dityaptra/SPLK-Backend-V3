@@ -18,7 +18,19 @@ func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// Create menangani endpoint POST /pendaftaran/:id/jurnal.
+// Create godoc
+// @Summary Isi jurnal harian (mahasiswa pemilik)
+// @Tags Jurnal Harian
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param request body CreateJurnalRequest true "Data jurnal harian"
+// @Success 201 {object} JurnalResponse
+// @Failure 400 {object} httpx.AppError
+// @Failure 409 {object} httpx.AppError
+// @Failure 422 {object} httpx.AppError
+// @Router /pendaftaran/{id}/jurnal [post]
 func (h *Handler) Create(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -47,7 +59,18 @@ func (h *Handler) Create(c *gin.Context) {
 	httpx.Created(c, res)
 }
 
-// Update menangani endpoint PUT /pendaftaran/:id/jurnal/:jid.
+// Update godoc
+// @Summary Perbarui jurnal harian draft
+// @Tags Jurnal Harian
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param jid path int true "ID Jurnal"
+// @Param request body UpdateJurnalRequest true "Perubahan data jurnal"
+// @Success 200 {object} JurnalResponse
+// @Failure 422 {object} httpx.AppError
+// @Router /pendaftaran/{id}/jurnal/{jid} [put]
 func (h *Handler) Update(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -82,7 +105,16 @@ func (h *Handler) Update(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// GetByID menangani endpoint GET /pendaftaran/:id/jurnal/:jid.
+// GetByID godoc
+// @Summary Detail jurnal harian
+// @Tags Jurnal Harian
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param jid path int true "ID Jurnal"
+// @Success 200 {object} JurnalResponse
+// @Failure 404 {object} httpx.AppError
+// @Router /pendaftaran/{id}/jurnal/{jid} [get]
 func (h *Handler) GetByID(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -111,7 +143,19 @@ func (h *Handler) GetByID(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// List menangani endpoint GET /pendaftaran/:id/jurnal.
+// List godoc
+// @Summary Daftar jurnal harian
+// @Tags Jurnal Harian
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param tanggal_mulai query string false "Filter tanggal mulai (YYYY-MM-DD)"
+// @Param tanggal_selesai query string false "Filter tanggal selesai (YYYY-MM-DD)"
+// @Param status query string false "Filter status (draft, disubmit)"
+// @Param page query int false "Nomor halaman"
+// @Param per_page query int false "Jumlah data per halaman"
+// @Success 200 {object} map[string]interface{}
+// @Router /pendaftaran/{id}/jurnal [get]
 func (h *Handler) List(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {

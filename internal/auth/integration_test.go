@@ -151,7 +151,7 @@ func TestAuthIntegration(t *testing.T) {
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
-		require.Equal(t, http.StatusOK, w.Code)
+		require.Equal(t, http.StatusOK, w.Code, "login gagal: %s", w.Body.String())
 
 		var resp struct {
 			Data auth.LoginResponse `json:"data"`

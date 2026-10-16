@@ -93,6 +93,15 @@ func Unprocessable(code, message string, details ...any) *AppError {
 	}
 }
 
+// TooManyRequests mengembalikan AppError dengan status HTTP 429.
+func TooManyRequests(code, message string) *AppError {
+	return &AppError{
+		HTTPStatus: http.StatusTooManyRequests,
+		Code:       code,
+		Message:    message,
+	}
+}
+
 // Internal mengembalikan AppError dengan status HTTP 500.
 func Internal(message string) *AppError {
 	return &AppError{

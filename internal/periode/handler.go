@@ -20,7 +20,17 @@ func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// Create menangani endpoint POST /admin/periode.
+// Create godoc
+// @Summary Buat periode program baru
+// @Tags Periode
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body CreatePeriodeRequest true "Data periode"
+// @Success 201 {object} PeriodeDetail
+// @Failure 400 {object} httpx.AppError
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/periode [post]
 func (h *Handler) Create(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -43,7 +53,15 @@ func (h *Handler) Create(c *gin.Context) {
 	httpx.Created(c, res)
 }
 
-// GetByID menangani endpoint GET /periode/:id.
+// GetByID godoc
+// @Summary Detail periode program
+// @Tags Periode
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Periode"
+// @Success 200 {object} PeriodeDetail
+// @Failure 404 {object} httpx.AppError
+// @Router /periode/{id} [get]
 func (h *Handler) GetByID(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -66,7 +84,17 @@ func (h *Handler) GetByID(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// List menangani endpoint GET /periode.
+// List godoc
+// @Summary Daftar periode program
+// @Tags Periode
+// @Security BearerAuth
+// @Produce json
+// @Param jenis_program query string false "Filter jenis program (magang, asistensi_mengajar, kkn)"
+// @Param status query string false "Filter status (draft, aktif, selesai)"
+// @Param page query int false "Nomor halaman"
+// @Param per_page query int false "Jumlah data per halaman"
+// @Success 200 {object} map[string]interface{}
+// @Router /periode [get]
 func (h *Handler) List(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -89,7 +117,18 @@ func (h *Handler) List(c *gin.Context) {
 	httpx.List(c, items, meta)
 }
 
-// Update menangani endpoint PUT /admin/periode/:id.
+// Update godoc
+// @Summary Perbarui draft periode
+// @Tags Periode
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Periode"
+// @Param request body UpdatePeriodeRequest true "Perubahan data periode"
+// @Success 200 {object} PeriodeDetail
+// @Failure 404 {object} httpx.AppError
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/periode/{id} [put]
 func (h *Handler) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id <= 0 {
@@ -112,7 +151,15 @@ func (h *Handler) Update(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// Aktifkan menangani endpoint POST /admin/periode/:id/aktifkan.
+// Aktifkan godoc
+// @Summary Aktifkan periode (draft -> aktif)
+// @Tags Periode
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Periode"
+// @Success 200 {object} PeriodeDetail
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/periode/{id}/aktifkan [post]
 func (h *Handler) Aktifkan(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -138,7 +185,16 @@ func (h *Handler) Aktifkan(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// Selesaikan menangani endpoint POST /admin/periode/:id/selesaikan.
+// Selesaikan godoc
+// @Summary Selesaikan periode (aktif -> selesai)
+// @Description Menyelesaikan periode serta mengalihkan status peserta 'berjalan' ke 'selesai' dan peserta 'diajukan' ke 'ditolak'.
+// @Tags Periode
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Periode"
+// @Success 200 {object} PeriodeDetail
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/periode/{id}/selesaikan [post]
 func (h *Handler) Selesaikan(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {

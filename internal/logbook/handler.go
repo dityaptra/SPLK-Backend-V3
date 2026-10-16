@@ -18,7 +18,18 @@ func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// Create menangani endpoint POST /pendaftaran/:id/logbook.
+// Create godoc
+// @Summary Isi catatan bimbingan (khusus dosen pembimbing pendaftaran itu)
+// @Tags Logbook Bimbingan
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param request body CreateLogbookRequest true "Catatan bimbingan"
+// @Success 201 {object} LogbookResponse
+// @Failure 404 {object} httpx.AppError
+// @Failure 422 {object} httpx.AppError
+// @Router /pendaftaran/{id}/logbook [post]
 func (h *Handler) Create(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -47,7 +58,18 @@ func (h *Handler) Create(c *gin.Context) {
 	httpx.Created(c, res)
 }
 
-// Update menangani endpoint PUT /pendaftaran/:id/logbook/:lid.
+// Update godoc
+// @Summary Perbarui catatan bimbingan (hanya dosen pembuat)
+// @Tags Logbook Bimbingan
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param lid path int true "ID Logbook"
+// @Param request body UpdateLogbookRequest true "Perubahan catatan"
+// @Success 200 {object} LogbookResponse
+// @Failure 404 {object} httpx.AppError
+// @Router /pendaftaran/{id}/logbook/{lid} [put]
 func (h *Handler) Update(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -82,7 +104,16 @@ func (h *Handler) Update(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// GetByID menangani endpoint GET /pendaftaran/:id/logbook/:lid.
+// GetByID godoc
+// @Summary Detail logbook bimbingan
+// @Tags Logbook Bimbingan
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param lid path int true "ID Logbook"
+// @Success 200 {object} LogbookResponse
+// @Failure 404 {object} httpx.AppError
+// @Router /pendaftaran/{id}/logbook/{lid} [get]
 func (h *Handler) GetByID(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -111,7 +142,16 @@ func (h *Handler) GetByID(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// List menangani endpoint GET /pendaftaran/:id/logbook.
+// List godoc
+// @Summary Daftar logbook bimbingan pendaftaran
+// @Tags Logbook Bimbingan
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param page query int false "Nomor halaman"
+// @Param per_page query int false "Jumlah data per halaman"
+// @Success 200 {object} map[string]interface{}
+// @Router /pendaftaran/{id}/logbook [get]
 func (h *Handler) List(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {

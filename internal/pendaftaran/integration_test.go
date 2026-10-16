@@ -178,6 +178,9 @@ func TestIntegration_PendaftaranInti(t *testing.T) {
 	ctx := context.Background()
 
 	// Bersihkan data pendaftaran dan periode di test database
+	_, _ = pool.Exec(ctx, "DELETE FROM penilaian")
+	_, _ = pool.Exec(ctx, "DELETE FROM jurnal_harian")
+	_, _ = pool.Exec(ctx, "DELETE FROM logbook_bimbingan")
 	_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
 	_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 	_, _ = pool.Exec(ctx, "DELETE FROM kelompok_kkn")
@@ -418,6 +421,9 @@ func TestIntegration_CabangMagang(t *testing.T) {
 
 	// Bersihkan data
 	_, _ = pool.Exec(ctx, "DELETE FROM log_aktivitas")
+	_, _ = pool.Exec(ctx, "DELETE FROM penilaian")
+	_, _ = pool.Exec(ctx, "DELETE FROM jurnal_harian")
+	_, _ = pool.Exec(ctx, "DELETE FROM logbook_bimbingan")
 	_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
 	_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 	_, _ = pool.Exec(ctx, "DELETE FROM pembimbing_lapangan")
@@ -426,6 +432,9 @@ func TestIntegration_CabangMagang(t *testing.T) {
 	_, _ = pool.Exec(ctx, "DELETE FROM periode")
 	defer func() {
 		_, _ = pool.Exec(ctx, "DELETE FROM log_aktivitas")
+		_, _ = pool.Exec(ctx, "DELETE FROM penilaian")
+		_, _ = pool.Exec(ctx, "DELETE FROM jurnal_harian")
+		_, _ = pool.Exec(ctx, "DELETE FROM logbook_bimbingan")
 		_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
 		_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 		_, _ = pool.Exec(ctx, "DELETE FROM pembimbing_lapangan")
@@ -828,6 +837,9 @@ func TestIntegration_CabangAM(t *testing.T) {
 
 	// Bersihkan data
 	_, _ = pool.Exec(ctx, "DELETE FROM log_aktivitas")
+	_, _ = pool.Exec(ctx, "DELETE FROM penilaian")
+	_, _ = pool.Exec(ctx, "DELETE FROM jurnal_harian")
+	_, _ = pool.Exec(ctx, "DELETE FROM logbook_bimbingan")
 	_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
 	_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 	_, _ = pool.Exec(ctx, "DELETE FROM pembimbing_lapangan")
@@ -836,6 +848,9 @@ func TestIntegration_CabangAM(t *testing.T) {
 	_, _ = pool.Exec(ctx, "DELETE FROM periode")
 	defer func() {
 		_, _ = pool.Exec(ctx, "DELETE FROM log_aktivitas")
+		_, _ = pool.Exec(ctx, "DELETE FROM penilaian")
+		_, _ = pool.Exec(ctx, "DELETE FROM jurnal_harian")
+		_, _ = pool.Exec(ctx, "DELETE FROM logbook_bimbingan")
 		_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
 		_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 		_, _ = pool.Exec(ctx, "DELETE FROM pembimbing_lapangan")

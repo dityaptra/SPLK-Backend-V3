@@ -225,6 +225,10 @@ func TestIntegration_PenilaianTigaPenilai(t *testing.T) {
 
 	ctx := context.Background()
 
+	// Bersihkan instrumen dan penilaian terdahulu agar evaluasi kelengkapan terisolasi
+	_, _ = pool.Exec(ctx, "DELETE FROM penilaian")
+	_, _ = pool.Exec(ctx, "DELETE FROM instrumen_penilaian WHERE jenis_program = 'magang'")
+
 	cfg := &config.Config{
 		AppEnv:        "development",
 		AppPort:       "8080",

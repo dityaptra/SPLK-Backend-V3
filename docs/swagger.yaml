@@ -1,0 +1,4422 @@
+basePath: /api/v1
+definitions:
+  akademik.CreateFakultasRequest:
+    properties:
+      kode:
+        maxLength: 10
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+    required:
+    - nama
+    type: object
+  akademik.CreateJurusanRequest:
+    properties:
+      id_fakultas:
+        type: integer
+      kode_jurusan:
+        maxLength: 10
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+    required:
+    - id_fakultas
+    - nama
+    type: object
+  akademik.CreateProdiRequest:
+    properties:
+      id_jurusan:
+        type: integer
+      kode:
+        maxLength: 10
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+    required:
+    - id_jurusan
+    - nama
+    type: object
+  akademik.Fakultas:
+    properties:
+      id:
+        type: integer
+      kode:
+        type: string
+      nama:
+        type: string
+    type: object
+  akademik.Jurusan:
+    properties:
+      id:
+        type: integer
+      id_fakultas:
+        type: integer
+      kode_jurusan:
+        type: string
+      nama:
+        type: string
+    type: object
+  akademik.ProgramStudi:
+    properties:
+      id:
+        type: integer
+      id_jurusan:
+        type: integer
+      kode:
+        type: string
+      nama:
+        type: string
+    type: object
+  akademik.UpdateFakultasRequest:
+    properties:
+      kode:
+        maxLength: 10
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+    required:
+    - nama
+    type: object
+  akademik.UpdateJurusanRequest:
+    properties:
+      id_fakultas:
+        type: integer
+      kode_jurusan:
+        maxLength: 10
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+    required:
+    - id_fakultas
+    - nama
+    type: object
+  akademik.UpdateProdiRequest:
+    properties:
+      id_jurusan:
+        type: integer
+      kode:
+        maxLength: 10
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+    required:
+    - id_jurusan
+    - nama
+    type: object
+  auth.ChangePasswordRequest:
+    properties:
+      password_baru:
+        minLength: 8
+        type: string
+      password_lama:
+        type: string
+    required:
+    - password_baru
+    - password_lama
+    type: object
+  auth.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  auth.LoginResponse:
+    properties:
+      expires_in:
+        description: dalam detik
+        type: integer
+      refresh_token:
+        type: string
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/auth.UserSummary'
+    type: object
+  auth.LogoutRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  auth.MeResponse:
+    properties:
+      email:
+        type: string
+      profiles:
+        $ref: '#/definitions/auth.UserProfiles'
+      roles:
+        items:
+          type: string
+        type: array
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  auth.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  auth.RefreshResponse:
+    properties:
+      expires_in:
+        description: dalam detik
+        type: integer
+      refresh_token:
+        type: string
+      token:
+        type: string
+    type: object
+  auth.UserProfiles:
+    properties:
+      id_admin:
+        type: integer
+      id_dosen:
+        type: integer
+      id_mahasiswa:
+        type: integer
+      id_pegawai:
+        type: integer
+      id_pembimbing_lapangan:
+        type: integer
+    type: object
+  auth.UserSummary:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      roles:
+        items:
+          type: string
+        type: array
+      username:
+        type: string
+    type: object
+  dokumen.DokumenResponse:
+    properties:
+      diunggah_oleh:
+        type: integer
+      id:
+        type: integer
+      id_kelompok_kkn:
+        type: integer
+      id_peserta_program:
+        type: integer
+      is_verified:
+        type: boolean
+      jenis_dokumen:
+        type: string
+      mime_type:
+        type: string
+      nama_file:
+        type: string
+      ukuran_file:
+        type: integer
+      uploaded_at:
+        type: string
+      verified_at:
+        type: string
+      verified_by:
+        type: integer
+    type: object
+  httpx.AppError:
+    properties:
+      code:
+        type: string
+      details: {}
+      message:
+        type: string
+    type: object
+  httpx.ListResponse:
+    properties:
+      data: {}
+      meta:
+        $ref: '#/definitions/httpx.PaginationMeta'
+    type: object
+  httpx.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  jurnal.CreateJurnalRequest:
+    properties:
+      isi:
+        type: string
+      judul:
+        type: string
+      kendala:
+        type: string
+      solusi:
+        type: string
+      status:
+        description: draft | disubmit
+        type: string
+      tanggal:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+    required:
+    - isi
+    - judul
+    - status
+    - tanggal
+    type: object
+  jurnal.JurnalResponse:
+    properties:
+      catatan_reviewer:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      id_peserta_program:
+        type: integer
+      isi:
+        type: string
+      judul:
+        type: string
+      kendala:
+        type: string
+      solusi:
+        type: string
+      status:
+        type: string
+      tanggal:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      updated_at:
+        type: string
+    type: object
+  jurnal.UpdateJurnalRequest:
+    properties:
+      isi:
+        type: string
+      judul:
+        type: string
+      kendala:
+        type: string
+      solusi:
+        type: string
+      status:
+        description: draft | disubmit
+        type: string
+      tanggal:
+        description: 'Format: YYYY-MM-DD (opsional jika tanggal diubah)'
+        type: string
+    required:
+    - isi
+    - judul
+    - status
+    type: object
+  kkn.AddAnggotaRequest:
+    properties:
+      id_ketua:
+        type: integer
+      id_peserta_program:
+        items:
+          type: integer
+        type: array
+    required:
+    - id_peserta_program
+    type: object
+  kkn.AnggotaKelompokResponse:
+    properties:
+      id_mahasiswa:
+        type: integer
+      id_peserta_program:
+        type: integer
+      is_ketua:
+        type: boolean
+      nama:
+        type: string
+      nim:
+        type: string
+      prodi:
+        type: string
+      status:
+        type: string
+      tanggal_daftar:
+        type: string
+    type: object
+  kkn.CreateKelompokRequest:
+    properties:
+      id_periode:
+        type: integer
+      id_tempat_program:
+        type: integer
+      nama_kelompok:
+        type: string
+    required:
+    - id_periode
+    - id_tempat_program
+    - nama_kelompok
+    type: object
+  kkn.KelompokDetailResponse:
+    properties:
+      alamat_tempat:
+        type: string
+      anggota:
+        items:
+          $ref: '#/definitions/kkn.AnggotaKelompokResponse'
+        type: array
+      created_at:
+        type: string
+      id:
+        type: integer
+      id_dosen_pembimbing:
+        type: integer
+      id_pembimbing_lapangan:
+        type: integer
+      id_periode:
+        type: integer
+      id_tempat_program:
+        type: integer
+      ketua:
+        $ref: '#/definitions/kkn.AnggotaKelompokResponse'
+      nama_dosen_pembimbing:
+        type: string
+      nama_kelompok:
+        type: string
+      nama_pembimbing_lapangan:
+        type: string
+      nama_periode:
+        type: string
+      nama_tempat:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  kkn.SetDosenPembimbingKelompokRequest:
+    properties:
+      id_dosen:
+        type: integer
+    required:
+    - id_dosen
+    type: object
+  kkn.SetPembimbingLapanganKelompokRequest:
+    properties:
+      id_pembimbing_lapangan:
+        type: integer
+    required:
+    - id_pembimbing_lapangan
+    type: object
+  logbook.CreateLogbookRequest:
+    properties:
+      catatan:
+        type: string
+      pertemuan_berikutnya:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      tanggal:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      topik_bimbingan:
+        type: string
+    required:
+    - tanggal
+    - topik_bimbingan
+    type: object
+  logbook.LogbookResponse:
+    properties:
+      catatan:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      id_dosen:
+        type: integer
+      id_peserta_program:
+        type: integer
+      nama_dosen:
+        type: string
+      pertemuan_berikutnya:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      tanggal:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      topik_bimbingan:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  logbook.UpdateLogbookRequest:
+    properties:
+      catatan:
+        type: string
+      pertemuan_berikutnya:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      tanggal:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      topik_bimbingan:
+        type: string
+    required:
+    - topik_bimbingan
+    type: object
+  pendaftaran.AdminPenempatanRequest:
+    properties:
+      id_pembimbing_lapangan:
+        type: integer
+      id_tempat_program:
+        type: integer
+    required:
+    - id_pembimbing_lapangan
+    - id_tempat_program
+    type: object
+  pendaftaran.CreatePendaftaranRequest:
+    properties:
+      id_periode:
+        type: integer
+    required:
+    - id_periode
+    type: object
+  pendaftaran.DosenSummary:
+    properties:
+      id:
+        type: integer
+      nama:
+        type: string
+      nip:
+        type: string
+    type: object
+  pendaftaran.KelompokKKNSummary:
+    properties:
+      id:
+        type: integer
+      nama_kelompok:
+        type: string
+    type: object
+  pendaftaran.MahasiswaSummary:
+    properties:
+      angkatan:
+        type: integer
+      id:
+        type: integer
+      nama:
+        type: string
+      nim:
+        type: string
+      prodi:
+        type: string
+    type: object
+  pendaftaran.PembimbingLapanganSummary:
+    properties:
+      id:
+        type: integer
+      jenis:
+        type: string
+      nama:
+        type: string
+    type: object
+  pendaftaran.PendaftaranDetail:
+    properties:
+      alasan_tolak:
+        type: string
+      created_at:
+        type: string
+      dosen_pembimbing:
+        $ref: '#/definitions/pendaftaran.DosenSummary'
+      dosen_penguji:
+        $ref: '#/definitions/pendaftaran.DosenSummary'
+      grade_huruf:
+        type: string
+      id:
+        type: integer
+      jenis_program:
+        type: string
+      kelompok_kkn:
+        $ref: '#/definitions/pendaftaran.KelompokKKNSummary'
+      kesiapan:
+        $ref: '#/definitions/pendaftaran.ReadinessResult'
+      mahasiswa:
+        $ref: '#/definitions/pendaftaran.MahasiswaSummary'
+      nilai_akhir:
+        type: number
+      pembimbing_lapangan:
+        $ref: '#/definitions/pendaftaran.PembimbingLapanganSummary'
+      periode:
+        $ref: '#/definitions/pendaftaran.PeriodeSummary'
+      sks_diakui:
+        type: integer
+      status:
+        type: string
+      tanggal_daftar:
+        type: string
+      tanggal_mulai_aktif:
+        type: string
+      tanggal_selesai_aktif:
+        type: string
+      tempat_program:
+        $ref: '#/definitions/pendaftaran.TempatSummary'
+      updated_at:
+        type: string
+    type: object
+  pendaftaran.PenempatanMagangRequest:
+    properties:
+      id_pembimbing_lapangan:
+        type: integer
+      id_tempat_program:
+        type: integer
+    required:
+    - id_pembimbing_lapangan
+    - id_tempat_program
+    type: object
+  pendaftaran.PeriodeSummary:
+    properties:
+      id:
+        type: integer
+      jenis_program:
+        type: string
+      nama:
+        type: string
+      status:
+        type: string
+      tahun_semester:
+        type: string
+    type: object
+  pendaftaran.ReadinessResult:
+    properties:
+      kekurangan:
+        items:
+          type: string
+        type: array
+      siap:
+        type: boolean
+    type: object
+  pendaftaran.SetDosenPembimbingRequest:
+    properties:
+      id_dosen:
+        type: integer
+    required:
+    - id_dosen
+    type: object
+  pendaftaran.SetDosenPengujiRequest:
+    properties:
+      id_dosen:
+        type: integer
+    required:
+    - id_dosen
+    type: object
+  pendaftaran.TempatSummary:
+    properties:
+      alamat:
+        type: string
+      id:
+        type: integer
+      jenis_program:
+        type: string
+      nama:
+        type: string
+    type: object
+  penilaian.CreateInstrumenRequest:
+    properties:
+      bobot:
+        maximum: 100
+        type: number
+      jenis_program:
+        type: string
+      nama_aspek:
+        type: string
+      role_penilai:
+        type: string
+    required:
+    - bobot
+    - jenis_program
+    - nama_aspek
+    - role_penilai
+    type: object
+  penilaian.FormPenilaianItemResponse:
+    properties:
+      bobot:
+        type: number
+      catatan:
+        type: string
+      id_instrumen:
+        type: integer
+      nama_aspek:
+        type: string
+      nilai:
+        type: number
+      role_penilai:
+        type: string
+      sudah_dinilai:
+        type: boolean
+    type: object
+  penilaian.FormPenilaianResponse:
+    properties:
+      grade_huruf:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/penilaian.FormPenilaianItemResponse'
+        type: array
+      jenis_program:
+        type: string
+      nilai_akhir:
+        type: number
+      pendaftaran_id:
+        type: integer
+      role_penilai:
+        type: string
+      terkunci:
+        type: boolean
+    type: object
+  penilaian.HitungNilaiManualResponse:
+    properties:
+      grade_huruf:
+        type: string
+      nilai_akhir:
+        type: number
+      pendaftaran_id:
+        type: integer
+      pesan:
+        type: string
+    type: object
+  penilaian.InstrumenResponse:
+    properties:
+      bobot:
+        type: number
+      id:
+        type: integer
+      jenis_program:
+        type: string
+      nama_aspek:
+        type: string
+      role_penilai:
+        type: string
+    type: object
+  penilaian.NilaiItemDetailResponse:
+    properties:
+      bobot:
+        type: number
+      catatan:
+        type: string
+      id_instrumen:
+        type: integer
+      nama_aspek:
+        type: string
+      nama_penilai:
+        type: string
+      nilai:
+        type: number
+      role_penilai:
+        type: string
+      tanggal_nilai:
+        type: string
+    type: object
+  penilaian.RincianNilaiResponse:
+    properties:
+      grade_huruf:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/penilaian.NilaiItemDetailResponse'
+        type: array
+      jenis_program:
+        type: string
+      nilai_akhir:
+        type: number
+      pendaftaran_id:
+        type: integer
+      status_peserta:
+        type: string
+    type: object
+  penilaian.RingkasanBobotProgram:
+    properties:
+      jenis_program:
+        type: string
+      per_role:
+        items:
+          $ref: '#/definitions/penilaian.RingkasanBobotRole'
+        type: array
+      total_bobot_keseluruhan:
+        type: number
+    type: object
+  penilaian.RingkasanBobotResponse:
+    properties:
+      programs:
+        items:
+          $ref: '#/definitions/penilaian.RingkasanBobotProgram'
+        type: array
+    type: object
+  penilaian.RingkasanBobotRole:
+    properties:
+      jumlah_instrumen:
+        type: integer
+      role_penilai:
+        type: string
+      total_bobot:
+        type: number
+    type: object
+  penilaian.SubmitPenilaianItem:
+    properties:
+      catatan:
+        type: string
+      id_instrumen:
+        type: integer
+      nilai:
+        type: number
+    required:
+    - id_instrumen
+    - nilai
+    type: object
+  penilaian.SubmitPenilaianRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/penilaian.SubmitPenilaianItem'
+        minItems: 1
+        type: array
+    required:
+    - items
+    type: object
+  penilaian.SubmitPenilaianResponse:
+    properties:
+      grade_huruf:
+        type: string
+      nilai_akhir:
+        type: number
+      pendaftaran_id:
+        type: integer
+      pesan:
+        type: string
+      semua_instrumen_terisi:
+        type: boolean
+    type: object
+  penilaian.UpdateInstrumenRequest:
+    properties:
+      bobot:
+        type: number
+      jenis_program:
+        type: string
+      nama_aspek:
+        type: string
+      role_penilai:
+        type: string
+    type: object
+  periode.CreatePeriodeRequest:
+    properties:
+      jenis_program:
+        enum:
+        - magang
+        - asistensi_mengajar
+        - kkn
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+      tahun_semester:
+        maxLength: 20
+        type: string
+      tanggal_buka_daftar:
+        description: opsional
+        type: string
+      tanggal_mulai:
+        description: 'format: YYYY-MM-DD'
+        type: string
+      tanggal_selesai:
+        description: 'format: YYYY-MM-DD'
+        type: string
+      tanggal_tutup_daftar:
+        description: opsional
+        type: string
+    required:
+    - jenis_program
+    - nama
+    - tahun_semester
+    - tanggal_mulai
+    - tanggal_selesai
+    type: object
+  periode.PeriodeDetail:
+    properties:
+      created_at:
+        type: string
+      dibuat_oleh:
+        type: integer
+      id:
+        type: integer
+      jenis_program:
+        type: string
+      nama:
+        type: string
+      status:
+        type: string
+      tahun_semester:
+        type: string
+      tanggal_buka_daftar:
+        type: string
+      tanggal_mulai:
+        type: string
+      tanggal_selesai:
+        type: string
+      tanggal_tutup_daftar:
+        type: string
+    type: object
+  periode.UpdatePeriodeRequest:
+    properties:
+      nama:
+        maxLength: 100
+        type: string
+      tahun_semester:
+        maxLength: 20
+        type: string
+      tanggal_buka_daftar:
+        type: string
+      tanggal_mulai:
+        type: string
+      tanggal_selesai:
+        type: string
+      tanggal_tutup_daftar:
+        type: string
+    required:
+    - nama
+    - tahun_semester
+    - tanggal_mulai
+    - tanggal_selesai
+    type: object
+  tempat.CreateTempatRequest:
+    properties:
+      alamat:
+        type: string
+      jenis_program:
+        enum:
+        - magang
+        - asistensi_mengajar
+        - kkn
+        type: string
+      kontak:
+        maxLength: 50
+        type: string
+      kota:
+        maxLength: 100
+        type: string
+      nama:
+        maxLength: 150
+        type: string
+    required:
+    - alamat
+    - jenis_program
+    - nama
+    type: object
+  tempat.PembimbingLapangan:
+    properties:
+      id:
+        type: integer
+      id_tempat_program:
+        type: integer
+      id_user:
+        type: integer
+      jabatan:
+        type: string
+      jenis:
+        type: string
+      kontak:
+        type: string
+      nama:
+        type: string
+    type: object
+  tempat.TempatProgram:
+    properties:
+      alamat:
+        type: string
+      id:
+        type: integer
+      is_aktif:
+        type: boolean
+      jenis_program:
+        type: string
+      kontak:
+        type: string
+      kota:
+        type: string
+      nama:
+        type: string
+    type: object
+  tempat.UpdateTempatRequest:
+    properties:
+      alamat:
+        type: string
+      is_aktif:
+        type: boolean
+      jenis_program:
+        enum:
+        - magang
+        - asistensi_mengajar
+        - kkn
+        type: string
+      kontak:
+        maxLength: 50
+        type: string
+      kota:
+        maxLength: 100
+        type: string
+      nama:
+        maxLength: 150
+        type: string
+    required:
+    - alamat
+    - jenis_program
+    - nama
+    type: object
+  user.AdminDetail:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      id_user:
+        type: integer
+      is_active:
+        type: boolean
+      nama:
+        type: string
+      nip:
+        type: string
+      username:
+        type: string
+    type: object
+  user.CreateAdminRequest:
+    properties:
+      email:
+        maxLength: 100
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+      nip:
+        maxLength: 30
+        type: string
+      password:
+        minLength: 8
+        type: string
+      username:
+        maxLength: 50
+        type: string
+    required:
+    - email
+    - nama
+    - password
+    - username
+    type: object
+  user.CreateDosenRequest:
+    properties:
+      email:
+        maxLength: 100
+        type: string
+      gelar_belakang:
+        maxLength: 50
+        type: string
+      gelar_depan:
+        maxLength: 50
+        type: string
+      id_prodi:
+        type: integer
+      nama:
+        maxLength: 100
+        type: string
+      nip:
+        maxLength: 30
+        type: string
+      password:
+        minLength: 8
+        type: string
+      username:
+        maxLength: 50
+        type: string
+    required:
+    - email
+    - id_prodi
+    - nama
+    - nip
+    - password
+    - username
+    type: object
+  user.CreateMahasiswaRequest:
+    properties:
+      angkatan:
+        type: integer
+      email:
+        maxLength: 100
+        type: string
+      id_prodi:
+        type: integer
+      nama:
+        maxLength: 100
+        type: string
+      nim:
+        maxLength: 20
+        type: string
+      no_hp:
+        maxLength: 20
+        type: string
+      password:
+        minLength: 8
+        type: string
+      semester_sekarang:
+        type: integer
+      username:
+        maxLength: 50
+        type: string
+    required:
+    - angkatan
+    - email
+    - id_prodi
+    - nama
+    - nim
+    - password
+    - username
+    type: object
+  user.CreatePegawaiRequest:
+    properties:
+      email:
+        maxLength: 100
+        type: string
+      gelar_belakang:
+        maxLength: 50
+        type: string
+      gelar_depan:
+        maxLength: 50
+        type: string
+      jabatan:
+        maxLength: 100
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+      nip:
+        maxLength: 30
+        type: string
+      password:
+        minLength: 8
+        type: string
+      username:
+        maxLength: 50
+        type: string
+    required:
+    - email
+    - jabatan
+    - nama
+    - nip
+    - password
+    - username
+    type: object
+  user.CreatePembimbingLapanganRequest:
+    properties:
+      email:
+        maxLength: 100
+        type: string
+      id_tempat_program:
+        type: integer
+      jabatan:
+        maxLength: 100
+        type: string
+      jenis:
+        enum:
+        - mentor
+        - guru_pamong
+        - kepala_desa
+        type: string
+      kontak:
+        maxLength: 50
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+      password:
+        minLength: 8
+        type: string
+      username:
+        maxLength: 50
+        type: string
+    required:
+    - email
+    - id_tempat_program
+    - jenis
+    - nama
+    - password
+    - username
+    type: object
+  user.DosenDetail:
+    properties:
+      email:
+        type: string
+      gelar_belakang:
+        type: string
+      gelar_depan:
+        type: string
+      id:
+        type: integer
+      id_prodi:
+        type: integer
+      id_user:
+        type: integer
+      is_active:
+        type: boolean
+      nama:
+        type: string
+      nama_prodi:
+        type: string
+      nip:
+        type: string
+      username:
+        type: string
+    type: object
+  user.MahasiswaDetail:
+    properties:
+      angkatan:
+        type: integer
+      email:
+        type: string
+      id:
+        type: integer
+      id_prodi:
+        type: integer
+      id_user:
+        type: integer
+      is_active:
+        type: boolean
+      nama:
+        type: string
+      nama_prodi:
+        type: string
+      nim:
+        type: string
+      no_hp:
+        type: string
+      semester_sekarang:
+        type: integer
+      username:
+        type: string
+    type: object
+  user.PegawaiDetail:
+    properties:
+      email:
+        type: string
+      gelar_belakang:
+        type: string
+      gelar_depan:
+        type: string
+      id:
+        type: integer
+      id_user:
+        type: integer
+      is_active:
+        type: boolean
+      jabatan:
+        type: string
+      nama:
+        type: string
+      nip:
+        type: string
+      username:
+        type: string
+    type: object
+  user.PembimbingLapanganDetail:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      id_tempat_program:
+        type: integer
+      id_user:
+        type: integer
+      is_active:
+        type: boolean
+      jabatan:
+        type: string
+      jenis:
+        type: string
+      kontak:
+        type: string
+      nama:
+        type: string
+      nama_tempat:
+        type: string
+      username:
+        type: string
+    type: object
+  user.ResetPasswordRequest:
+    properties:
+      password_baru:
+        minLength: 8
+        type: string
+    required:
+    - password_baru
+    type: object
+  user.UpdateAdminRequest:
+    properties:
+      nama:
+        maxLength: 100
+        type: string
+      nip:
+        maxLength: 30
+        type: string
+    required:
+    - nama
+    type: object
+  user.UpdateDosenRequest:
+    properties:
+      gelar_belakang:
+        maxLength: 50
+        type: string
+      gelar_depan:
+        maxLength: 50
+        type: string
+      id_prodi:
+        type: integer
+      nama:
+        maxLength: 100
+        type: string
+      nip:
+        maxLength: 30
+        type: string
+    required:
+    - id_prodi
+    - nama
+    - nip
+    type: object
+  user.UpdateMahasiswaRequest:
+    properties:
+      angkatan:
+        type: integer
+      id_prodi:
+        type: integer
+      nama:
+        maxLength: 100
+        type: string
+      nim:
+        maxLength: 20
+        type: string
+      no_hp:
+        maxLength: 20
+        type: string
+      semester_sekarang:
+        type: integer
+    required:
+    - angkatan
+    - id_prodi
+    - nama
+    - nim
+    type: object
+  user.UpdatePegawaiRequest:
+    properties:
+      gelar_belakang:
+        maxLength: 50
+        type: string
+      gelar_depan:
+        maxLength: 50
+        type: string
+      jabatan:
+        maxLength: 100
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+      nip:
+        maxLength: 30
+        type: string
+    required:
+    - jabatan
+    - nama
+    - nip
+    type: object
+  user.UpdatePembimbingLapanganRequest:
+    properties:
+      id_tempat_program:
+        type: integer
+      jabatan:
+        maxLength: 100
+        type: string
+      jenis:
+        enum:
+        - mentor
+        - guru_pamong
+        - kepala_desa
+        type: string
+      kontak:
+        maxLength: 50
+        type: string
+      nama:
+        maxLength: 100
+        type: string
+    required:
+    - id_tempat_program
+    - jenis
+    - nama
+    type: object
+  user.UpdateUserStatusRequest:
+    properties:
+      is_active:
+        type: boolean
+    type: object
+  user.UserListItem:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      roles:
+        items:
+          type: string
+        type: array
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: tik@undiksha.ac.id
+    name: UPA TIK Undiksha
+  description: Dokumentasi REST API Sistem Pengelolaan Magang, Asistensi Mengajar,
+    dan KKN (SPLK) UPA TIK Undiksha.
+  license:
+    name: Proprietary
+    url: https://undiksha.ac.id
+  termsOfService: http://swagger.io/terms/
+  title: SPLK Backend API
+  version: "1.0"
+paths:
+  /admin/admins:
+    get:
+      parameters:
+      - description: Limit data per halaman
+        in: query
+        name: limit
+        type: integer
+      - description: Offset data
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.ListResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/user.AdminDetail'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Daftar admin dengan paginasi
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data admin baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/user.AdminDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah akun admin baru
+      tags:
+      - User
+  /admin/admins/{id}:
+    get:
+      parameters:
+      - description: ID Admin
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.AdminDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail admin berdasarkan ID
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Admin
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data pembaruan admin
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdateAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.AdminDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui data profil admin
+      tags:
+      - User
+  /admin/dosen:
+    get:
+      parameters:
+      - description: Limit data per halaman
+        in: query
+        name: limit
+        type: integer
+      - description: Offset data
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.ListResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/user.DosenDetail'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Daftar dosen dengan paginasi
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data dosen baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateDosenRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/user.DosenDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah akun dan data dosen
+      tags:
+      - User
+  /admin/dosen/{id}:
+    get:
+      parameters:
+      - description: ID Dosen
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.DosenDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail dosen berdasarkan ID
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Dosen
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data pembaruan dosen
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdateDosenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.DosenDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui data dosen
+      tags:
+      - User
+  /admin/fakultas:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data fakultas
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/akademik.CreateFakultasRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/akademik.Fakultas'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah fakultas baru
+      tags:
+      - Akademik
+  /admin/fakultas/{id}:
+    delete:
+      parameters:
+      - description: ID Fakultas
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Hapus fakultas
+      tags:
+      - Akademik
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Fakultas
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Perubahan data fakultas
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/akademik.UpdateFakultasRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/akademik.Fakultas'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui data fakultas
+      tags:
+      - Akademik
+  /admin/instrumen-penilaian:
+    get:
+      parameters:
+      - description: Filter jenis program
+        in: query
+        name: jenis_program
+        type: string
+      - description: Filter role penilai
+        in: query
+        name: role_penilai
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/penilaian.InstrumenResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Daftar instrumen penilaian
+      tags:
+      - Penilaian
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data instrumen baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/penilaian.CreateInstrumenRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/penilaian.InstrumenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah instrumen penilaian (admin)
+      tags:
+      - Penilaian
+  /admin/instrumen-penilaian/{id}:
+    delete:
+      parameters:
+      - description: ID Instrumen
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Hapus instrumen penilaian
+      tags:
+      - Penilaian
+    get:
+      parameters:
+      - description: ID Instrumen
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/penilaian.InstrumenResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail instrumen penilaian
+      tags:
+      - Penilaian
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Instrumen
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data perubahan instrumen
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/penilaian.UpdateInstrumenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/penilaian.InstrumenResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui instrumen penilaian
+      tags:
+      - Penilaian
+  /admin/instrumen-penilaian/ringkasan:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/penilaian.RingkasanBobotResponse'
+      security:
+      - BearerAuth: []
+      summary: Ringkasan total bobot per program dan role penilai
+      tags:
+      - Penilaian
+  /admin/jurusan:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data jurusan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/akademik.CreateJurusanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/akademik.Jurusan'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah jurusan baru
+      tags:
+      - Akademik
+  /admin/jurusan/{id}:
+    delete:
+      parameters:
+      - description: ID Jurusan
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Hapus jurusan
+      tags:
+      - Akademik
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Jurusan
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Perubahan data jurusan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/akademik.UpdateJurusanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/akademik.Jurusan'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui data jurusan
+      tags:
+      - Akademik
+  /admin/kkn/kelompok:
+    get:
+      parameters:
+      - description: Filter periode
+        in: query
+        name: id_periode
+        type: integer
+      - description: Nomor halaman
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah data per halaman
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Daftar kelompok KKN
+      tags:
+      - KKN
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data kelompok KKN
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/kkn.CreateKelompokRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/kkn.KelompokDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Buat kelompok KKN baru
+      tags:
+      - KKN
+  /admin/kkn/kelompok/{id}/anggota:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Kelompok KKN
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID pendaftaran peserta
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/kkn.AddAnggotaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/kkn.KelompokDetailResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah anggota ke kelompok KKN
+      tags:
+      - KKN
+  /admin/kkn/kelompok/{id}/anggota/{pid}:
+    delete:
+      parameters:
+      - description: ID Kelompok KKN
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID Pendaftaran Peserta
+        in: path
+        name: pid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Keluarkan anggota dari kelompok KKN
+      tags:
+      - KKN
+  /admin/kkn/kelompok/{id}/dosen-pembimbing:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Kelompok KKN
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID Dosen Pembimbing
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/kkn.SetDosenPembimbingKelompokRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/kkn.KelompokDetailResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tetapkan dosen pembimbing kelompok KKN
+      tags:
+      - KKN
+  /admin/kkn/kelompok/{id}/pembimbing-lapangan:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Kelompok KKN
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID Pembimbing Lapangan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/kkn.SetPembimbingLapanganKelompokRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/kkn.KelompokDetailResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tetapkan kepala desa / pembimbing lapangan kelompok KKN
+      tags:
+      - KKN
+  /admin/mahasiswa:
+    get:
+      parameters:
+      - description: Limit data per halaman
+        in: query
+        name: limit
+        type: integer
+      - description: Offset data
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.ListResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/user.MahasiswaDetail'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Daftar mahasiswa dengan paginasi
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data mahasiswa baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateMahasiswaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/user.MahasiswaDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah akun dan data mahasiswa
+      tags:
+      - User
+  /admin/mahasiswa/{id}:
+    get:
+      parameters:
+      - description: ID Mahasiswa
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.MahasiswaDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail mahasiswa berdasarkan ID
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Mahasiswa
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data pembaruan mahasiswa
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdateMahasiswaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.MahasiswaDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui data mahasiswa
+      tags:
+      - User
+  /admin/pegawai:
+    get:
+      parameters:
+      - description: Limit data per halaman
+        in: query
+        name: limit
+        type: integer
+      - description: Offset data
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.ListResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/user.PegawaiDetail'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Daftar pegawai dengan paginasi
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data pegawai baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreatePegawaiRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/user.PegawaiDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah akun dan data pegawai
+      tags:
+      - User
+  /admin/pegawai/{id}:
+    get:
+      parameters:
+      - description: ID Pegawai
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.PegawaiDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail pegawai berdasarkan ID
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Pegawai
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data pembaruan pegawai
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdatePegawaiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.PegawaiDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui data pegawai
+      tags:
+      - User
+  /admin/pembimbing-lapangan:
+    get:
+      parameters:
+      - description: Limit data per halaman
+        in: query
+        name: limit
+        type: integer
+      - description: Offset data
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.ListResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/user.PembimbingLapanganDetail'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Daftar pembimbing lapangan dengan paginasi
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data pembimbing lapangan baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreatePembimbingLapanganRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/user.PembimbingLapanganDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah akun dan data pembimbing lapangan (mentor, guru pamong, kepala
+        desa)
+      tags:
+      - User
+  /admin/pembimbing-lapangan/{id}:
+    get:
+      parameters:
+      - description: ID Pembimbing Lapangan
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.PembimbingLapanganDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail pembimbing lapangan berdasarkan ID
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Pembimbing Lapangan
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data pembaruan pembimbing lapangan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdatePembimbingLapanganRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.PembimbingLapanganDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui data pembimbing lapangan
+      tags:
+      - User
+  /admin/pendaftaran/{id}/dosen-penguji:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID Dosen Penguji
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pendaftaran.SetDosenPengujiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pendaftaran.PendaftaranDetail'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Penetapan dosen penguji oleh admin
+      tags:
+      - Pendaftaran
+  /admin/pendaftaran/{id}/hitung-nilai:
+    post:
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/penilaian.HitungNilaiManualResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Hitung manual nilai akhir oleh admin
+      tags:
+      - Penilaian
+  /admin/pendaftaran/{id}/penempatan:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Penempatan sekolah dan guru pamong
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pendaftaran.AdminPenempatanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pendaftaran.PendaftaranDetail'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Pemetaan sekolah penempatan dan guru pamong AM oleh admin
+      tags:
+      - Pendaftaran
+  /admin/periode:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data periode
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/periode.CreatePeriodeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/periode.PeriodeDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Buat periode program baru
+      tags:
+      - Periode
+  /admin/periode/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Periode
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Perubahan data periode
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/periode.UpdatePeriodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/periode.PeriodeDetail'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui draft periode
+      tags:
+      - Periode
+  /admin/periode/{id}/aktifkan:
+    post:
+      parameters:
+      - description: ID Periode
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/periode.PeriodeDetail'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Aktifkan periode (draft -> aktif)
+      tags:
+      - Periode
+  /admin/periode/{id}/selesaikan:
+    post:
+      description: Menyelesaikan periode serta mengalihkan status peserta 'berjalan'
+        ke 'selesai' dan peserta 'diajukan' ke 'ditolak'.
+      parameters:
+      - description: ID Periode
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/periode.PeriodeDetail'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Selesaikan periode (aktif -> selesai)
+      tags:
+      - Periode
+  /admin/program-studi:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data program studi
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/akademik.CreateProdiRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/akademik.ProgramStudi'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah program studi baru
+      tags:
+      - Akademik
+  /admin/program-studi/{id}:
+    delete:
+      parameters:
+      - description: ID Program Studi
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Hapus program studi
+      tags:
+      - Akademik
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Program Studi
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Perubahan data program studi
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/akademik.UpdateProdiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/akademik.ProgramStudi'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui data program studi
+      tags:
+      - Akademik
+  /admin/tempat-program:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data tempat program
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tempat.CreateTempatRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/tempat.TempatProgram'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Tambah tempat pelaksanaan program
+      tags:
+      - Tempat Program
+  /admin/tempat-program/{id}:
+    delete:
+      parameters:
+      - description: ID Tempat Program
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Nonaktifkan tempat program (soft delete)
+      tags:
+      - Tempat Program
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Tempat Program
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data perubahan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tempat.UpdateTempatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tempat.TempatProgram'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui data tempat program
+      tags:
+      - Tempat Program
+  /admin/users:
+    get:
+      parameters:
+      - description: Filter berdasarkan role
+        in: query
+        name: role
+        type: string
+      - description: Pencarian username atau email
+        in: query
+        name: q
+        type: string
+      - description: Limit data per halaman
+        in: query
+        name: limit
+        type: integer
+      - description: Offset data
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.ListResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/user.UserListItem'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Daftar user umum dengan filter dan paginasi
+      tags:
+      - User
+  /admin/users/{id}:
+    get:
+      parameters:
+      - description: ID User
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail user umum berdasarkan ID
+      tags:
+      - User
+  /admin/users/{id}/reset-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID User
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Password baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Reset password user oleh admin
+      tags:
+      - User
+  /admin/users/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID User
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Status aktif user
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdateUserStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Aktifkan atau nonaktifkan user
+      tags:
+      - User
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Autentikasi dengan username dan password, mengembalikan access
+        token dan refresh token.
+      parameters:
+      - description: Kredensial login
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      summary: Login akun pengguna
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Mencabut refresh token dan mencatat aktivitas logout.
+      parameters:
+      - description: Refresh token yang akan dicabut
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Logout pengguna
+      tags:
+      - Auth
+  /auth/me:
+    get:
+      description: Mengembalikan profil singkat, roles, dan profil spesifik (mahasiswa/dosen/pegawai/lapangan).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.MeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Profil pengguna saat ini
+      tags:
+      - Auth
+  /auth/password:
+    put:
+      consumes:
+      - application/json
+      description: Mengubah password akun pengguna yang sedang login.
+      parameters:
+      - description: Password lama dan baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Ubah password sendiri
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Menukar refresh token yang valid dengan access token baru dan refresh
+        token baru.
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.RefreshResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      summary: Rotasi refresh token
+      tags:
+      - Auth
+  /dokumen/{id}:
+    delete:
+      parameters:
+      - description: ID Dokumen
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Hapus dokumen (hanya saat pendaftaran berstatus diajukan)
+      tags:
+      - Dokumen
+  /dokumen/{id}/download:
+    get:
+      parameters:
+      - description: ID Dokumen
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Unduh file dokumen terautentikasi
+      tags:
+      - Dokumen
+  /fakultas:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/akademik.Fakultas'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Daftar seluruh fakultas
+      tags:
+      - Akademik
+  /fakultas/{id}:
+    get:
+      parameters:
+      - description: ID Fakultas
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/akademik.Fakultas'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail fakultas
+      tags:
+      - Akademik
+  /jurusan:
+    get:
+      parameters:
+      - description: Filter berdasarkan ID Fakultas
+        in: query
+        name: id_fakultas
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/akademik.Jurusan'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Daftar seluruh jurusan
+      tags:
+      - Akademik
+  /jurusan/{id}:
+    get:
+      parameters:
+      - description: ID Jurusan
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/akademik.Jurusan'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail jurusan
+      tags:
+      - Akademik
+  /kkn/kelompok/{id}:
+    get:
+      parameters:
+      - description: ID Kelompok KKN
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/kkn.KelompokDetailResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail kelompok KKN
+      tags:
+      - KKN
+  /kkn/kelompok/{id}/dokumen:
+    get:
+      parameters:
+      - description: ID Kelompok KKN
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dokumen.DokumenResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Daftar dokumen kelompok KKN
+      tags:
+      - Dokumen
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: ID Kelompok KKN
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Jenis dokumen (proker)
+        in: formData
+        name: jenis_dokumen
+        required: true
+        type: string
+      - description: File dokumen (PDF, DOCX, PNG, JPG, maks 5MB)
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dokumen.DokumenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Unggah dokumen kelompok KKN (proker kelompok)
+      tags:
+      - Dokumen
+  /pendaftaran:
+    get:
+      parameters:
+      - description: Filter jenis program
+        in: query
+        name: jenis_program
+        type: string
+      - description: Filter status (diajukan, ditolak, berjalan, selesai)
+        in: query
+        name: status
+        type: string
+      - description: Filter periode
+        in: query
+        name: id_periode
+        type: integer
+      - description: Pencarian nama atau NIM
+        in: query
+        name: q
+        type: string
+      - description: Nomor halaman
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah data per halaman
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Daftar pendaftaran program
+      tags:
+      - Pendaftaran
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data pendaftaran program
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pendaftaran.CreatePendaftaranRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pendaftaran.PendaftaranDetail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Pendaftaran program oleh mahasiswa
+      tags:
+      - Pendaftaran
+  /pendaftaran/{id}:
+    get:
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pendaftaran.PendaftaranDetail'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail pendaftaran program
+      tags:
+      - Pendaftaran
+  /pendaftaran/{id}/ajukan-ulang:
+    post:
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pendaftaran.PendaftaranDetail'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Pengajuan ulang pendaftaran yang ditolak
+      tags:
+      - Pendaftaran
+  /pendaftaran/{id}/dokumen:
+    get:
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dokumen.DokumenResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Daftar dokumen peserta individual
+      tags:
+      - Dokumen
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Jenis dokumen (mou, proposal, proker, laporan_akhir)
+        in: formData
+        name: jenis_dokumen
+        required: true
+        type: string
+      - description: File dokumen (PDF, DOCX, PNG, JPG, maks 5MB)
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dokumen.DokumenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Unggah dokumen pendaftaran individual (mou, proposal, proker, laporan_akhir)
+      tags:
+      - Dokumen
+  /pendaftaran/{id}/dosen-pembimbing:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID Dosen Pembimbing
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pendaftaran.SetDosenPembimbingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pendaftaran.PendaftaranDetail'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Penetapan dosen pembimbing oleh admin/pegawai
+      tags:
+      - Pendaftaran
+  /pendaftaran/{id}/form-penilaian:
+    get:
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/penilaian.FormPenilaianResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Form instrumen penilaian untuk penilai sah
+      tags:
+      - Penilaian
+  /pendaftaran/{id}/jurnal:
+    get:
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Filter tanggal mulai (YYYY-MM-DD)
+        in: query
+        name: tanggal_mulai
+        type: string
+      - description: Filter tanggal selesai (YYYY-MM-DD)
+        in: query
+        name: tanggal_selesai
+        type: string
+      - description: Filter status (draft, disubmit)
+        in: query
+        name: status
+        type: string
+      - description: Nomor halaman
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah data per halaman
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Daftar jurnal harian
+      tags:
+      - Jurnal Harian
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data jurnal harian
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/jurnal.CreateJurnalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/jurnal.JurnalResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Isi jurnal harian (mahasiswa pemilik)
+      tags:
+      - Jurnal Harian
+  /pendaftaran/{id}/jurnal/{jid}:
+    get:
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID Jurnal
+        in: path
+        name: jid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/jurnal.JurnalResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail jurnal harian
+      tags:
+      - Jurnal Harian
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID Jurnal
+        in: path
+        name: jid
+        required: true
+        type: integer
+      - description: Perubahan data jurnal
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/jurnal.UpdateJurnalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/jurnal.JurnalResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui jurnal harian draft
+      tags:
+      - Jurnal Harian
+  /pendaftaran/{id}/logbook:
+    get:
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Nomor halaman
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah data per halaman
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Daftar logbook bimbingan pendaftaran
+      tags:
+      - Logbook Bimbingan
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Catatan bimbingan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/logbook.CreateLogbookRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/logbook.LogbookResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Isi catatan bimbingan (khusus dosen pembimbing pendaftaran itu)
+      tags:
+      - Logbook Bimbingan
+  /pendaftaran/{id}/logbook/{lid}:
+    get:
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID Logbook
+        in: path
+        name: lid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/logbook.LogbookResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail logbook bimbingan
+      tags:
+      - Logbook Bimbingan
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID Logbook
+        in: path
+        name: lid
+        required: true
+        type: integer
+      - description: Perubahan catatan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/logbook.UpdateLogbookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/logbook.LogbookResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui catatan bimbingan (hanya dosen pembuat)
+      tags:
+      - Logbook Bimbingan
+  /pendaftaran/{id}/nilai:
+    get:
+      description: Menampilkan rincian nilai. Mahasiswa pemilik hanya dapat melihat
+        rincian setelah nilai akhir terisi.
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/penilaian.RincianNilaiResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Rincian nilai dan nilai akhir peserta
+      tags:
+      - Penilaian
+  /pendaftaran/{id}/penempatan-magang:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Pilihan tempat magang dan mentor
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pendaftaran.PenempatanMagangRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pendaftaran.PendaftaranDetail'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Pemilihan tempat magang dan mentor oleh mahasiswa
+      tags:
+      - Pendaftaran
+  /pendaftaran/{id}/penilaian:
+    post:
+      consumes:
+      - application/json
+      description: Mengisi penilaian per instrumen. Bila seluruh instrumen dari seluruh
+        penilai telah terisi, nilai akhir dihitung otomatis dan dikunci.
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Daftar nilai instrumen
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/penilaian.SubmitPenilaianRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/penilaian.SubmitPenilaianResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Kirim penilaian peserta (penilai sah)
+      tags:
+      - Penilaian
+  /periode:
+    get:
+      parameters:
+      - description: Filter jenis program (magang, asistensi_mengajar, kkn)
+        in: query
+        name: jenis_program
+        type: string
+      - description: Filter status (draft, aktif, selesai)
+        in: query
+        name: status
+        type: string
+      - description: Nomor halaman
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah data per halaman
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Daftar periode program
+      tags:
+      - Periode
+  /periode/{id}:
+    get:
+      parameters:
+      - description: ID Periode
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/periode.PeriodeDetail'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail periode program
+      tags:
+      - Periode
+  /program-studi:
+    get:
+      parameters:
+      - description: Filter berdasarkan ID Jurusan
+        in: query
+        name: id_jurusan
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/akademik.ProgramStudi'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Daftar seluruh program studi
+      tags:
+      - Akademik
+  /program-studi/{id}:
+    get:
+      parameters:
+      - description: ID Program Studi
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/akademik.ProgramStudi'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail program studi
+      tags:
+      - Akademik
+  /tempat-program:
+    get:
+      parameters:
+      - description: Filter jenis program (magang, asistensi_mengajar, kkn)
+        in: query
+        name: jenis_program
+        type: string
+      - description: Filter status keaktifan
+        in: query
+        name: is_aktif
+        type: boolean
+      - description: Nomor halaman
+        in: query
+        name: page
+        type: integer
+      - description: Jumlah data per halaman
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Daftar tempat pelaksanaan program
+      tags:
+      - Tempat Program
+  /tempat-program/{id}:
+    get:
+      parameters:
+      - description: ID Tempat Program
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tempat.TempatProgram'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Detail tempat pelaksanaan program
+      tags:
+      - Tempat Program
+  /tempat-program/{id}/pembimbing-lapangan:
+    get:
+      parameters:
+      - description: ID Tempat Program
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/tempat.PembimbingLapangan'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Daftar pembimbing lapangan pada suatu tempat
+      tags:
+      - Tempat Program
+securityDefinitions:
+  BearerAuth:
+    description: 'Format token: "Bearer <token_jwt>"'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

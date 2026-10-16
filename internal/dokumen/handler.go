@@ -32,7 +32,19 @@ func NewHandler(service Service, cfg *config.Config) *Handler {
 	}
 }
 
-// UploadPeserta menangani POST /pendaftaran/:id/dokumen
+// UploadPeserta godoc
+// @Summary Unggah dokumen pendaftaran individual (mou, proposal, proker, laporan_akhir)
+// @Tags Dokumen
+// @Security BearerAuth
+// @Accept multipart/form-data
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param jenis_dokumen formData string true "Jenis dokumen (mou, proposal, proker, laporan_akhir)"
+// @Param file formData file true "File dokumen (PDF, DOCX, PNG, JPG, maks 5MB)"
+// @Success 201 {object} DokumenResponse
+// @Failure 400 {object} httpx.AppError
+// @Failure 422 {object} httpx.AppError
+// @Router /pendaftaran/{id}/dokumen [post]
 func (h *Handler) UploadPeserta(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -81,7 +93,19 @@ func (h *Handler) UploadPeserta(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": resp})
 }
 
-// UploadKelompok menangani POST /kkn/kelompok/:id/dokumen
+// UploadKelompok godoc
+// @Summary Unggah dokumen kelompok KKN (proker kelompok)
+// @Tags Dokumen
+// @Security BearerAuth
+// @Accept multipart/form-data
+// @Produce json
+// @Param id path int true "ID Kelompok KKN"
+// @Param jenis_dokumen formData string true "Jenis dokumen (proker)"
+// @Param file formData file true "File dokumen (PDF, DOCX, PNG, JPG, maks 5MB)"
+// @Success 201 {object} DokumenResponse
+// @Failure 400 {object} httpx.AppError
+// @Failure 422 {object} httpx.AppError
+// @Router /kkn/kelompok/{id}/dokumen [post]
 func (h *Handler) UploadKelompok(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -129,7 +153,14 @@ func (h *Handler) UploadKelompok(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": resp})
 }
 
-// ListPeserta menangani GET /pendaftaran/:id/dokumen
+// ListPeserta godoc
+// @Summary Daftar dokumen peserta individual
+// @Tags Dokumen
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Success 200 {array} DokumenResponse
+// @Router /pendaftaran/{id}/dokumen [get]
 func (h *Handler) ListPeserta(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -152,7 +183,14 @@ func (h *Handler) ListPeserta(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": list})
 }
 
-// ListKelompok menangani GET /kkn/kelompok/:id/dokumen
+// ListKelompok godoc
+// @Summary Daftar dokumen kelompok KKN
+// @Tags Dokumen
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Kelompok KKN"
+// @Success 200 {array} DokumenResponse
+// @Router /kkn/kelompok/{id}/dokumen [get]
 func (h *Handler) ListKelompok(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -175,7 +213,15 @@ func (h *Handler) ListKelompok(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": list})
 }
 
-// Download menangani GET /dokumen/:id/download
+// Download godoc
+// @Summary Unduh file dokumen terautentikasi
+// @Tags Dokumen
+// @Security BearerAuth
+// @Produce octet-stream
+// @Param id path int true "ID Dokumen"
+// @Success 200 {file} binary
+// @Failure 404 {object} httpx.AppError
+// @Router /dokumen/{id}/download [get]
 func (h *Handler) Download(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -206,7 +252,15 @@ func (h *Handler) Download(c *gin.Context) {
 	_, _ = io.Copy(c.Writer, rc)
 }
 
-// Delete menangani DELETE /dokumen/:id
+// Delete godoc
+// @Summary Hapus dokumen (hanya saat pendaftaran berstatus diajukan)
+// @Tags Dokumen
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Dokumen"
+// @Success 200 {object} map[string]string
+// @Failure 422 {object} httpx.AppError
+// @Router /dokumen/{id} [delete]
 func (h *Handler) Delete(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {

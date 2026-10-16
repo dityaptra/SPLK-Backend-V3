@@ -18,7 +18,18 @@ func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// Create menangani endpoint POST /admin/tempat-program.
+// Create godoc
+// @Summary Tambah tempat pelaksanaan program
+// @Tags Tempat Program
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body CreateTempatRequest true "Data tempat program"
+// @Success 201 {object} TempatProgram
+// @Failure 400 {object} httpx.AppError
+// @Failure 401 {object} httpx.AppError
+// @Failure 403 {object} httpx.AppError
+// @Router /admin/tempat-program [post]
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateTempatRequest
 	if err := httpx.BindJSON(c, &req); err != nil {
@@ -35,7 +46,15 @@ func (h *Handler) Create(c *gin.Context) {
 	httpx.Created(c, res)
 }
 
-// GetByID menangani endpoint GET /tempat-program/:id.
+// GetByID godoc
+// @Summary Detail tempat pelaksanaan program
+// @Tags Tempat Program
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Tempat Program"
+// @Success 200 {object} TempatProgram
+// @Failure 404 {object} httpx.AppError
+// @Router /tempat-program/{id} [get]
 func (h *Handler) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id <= 0 {
@@ -52,7 +71,17 @@ func (h *Handler) GetByID(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// List menangani endpoint GET /tempat-program.
+// List godoc
+// @Summary Daftar tempat pelaksanaan program
+// @Tags Tempat Program
+// @Security BearerAuth
+// @Produce json
+// @Param jenis_program query string false "Filter jenis program (magang, asistensi_mengajar, kkn)"
+// @Param is_aktif query bool false "Filter status keaktifan"
+// @Param page query int false "Nomor halaman"
+// @Param per_page query int false "Jumlah data per halaman"
+// @Success 200 {object} map[string]interface{}
+// @Router /tempat-program [get]
 func (h *Handler) List(c *gin.Context) {
 	p := httpx.ParsePagination(c)
 	filter := TempatFilter{
@@ -75,7 +104,17 @@ func (h *Handler) List(c *gin.Context) {
 	httpx.List(c, items, meta)
 }
 
-// Update menangani endpoint PUT /admin/tempat-program/:id.
+// Update godoc
+// @Summary Perbarui data tempat program
+// @Tags Tempat Program
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Tempat Program"
+// @Param request body UpdateTempatRequest true "Data perubahan"
+// @Success 200 {object} TempatProgram
+// @Failure 404 {object} httpx.AppError
+// @Router /admin/tempat-program/{id} [put]
 func (h *Handler) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id <= 0 {
@@ -98,7 +137,15 @@ func (h *Handler) Update(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// Delete menangani endpoint DELETE /admin/tempat-program/:id (soft delete is_aktif=false).
+// Delete godoc
+// @Summary Nonaktifkan tempat program (soft delete)
+// @Tags Tempat Program
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Tempat Program"
+// @Success 200 {object} map[string]string
+// @Failure 404 {object} httpx.AppError
+// @Router /admin/tempat-program/{id} [delete]
 func (h *Handler) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id <= 0 {
@@ -114,7 +161,14 @@ func (h *Handler) Delete(c *gin.Context) {
 	httpx.OK(c, gin.H{"message": "tempat program berhasil dinonaktifkan"})
 }
 
-// ListPembimbing menangani endpoint GET /tempat-program/:id/pembimbing-lapangan.
+// ListPembimbing godoc
+// @Summary Daftar pembimbing lapangan pada suatu tempat
+// @Tags Tempat Program
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Tempat Program"
+// @Success 200 {array} PembimbingLapangan
+// @Router /tempat-program/{id}/pembimbing-lapangan [get]
 func (h *Handler) ListPembimbing(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id <= 0 {

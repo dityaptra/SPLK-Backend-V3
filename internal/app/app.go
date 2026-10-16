@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,10 @@ import (
 	"splk-backend/internal/platform/storage"
 	"splk-backend/internal/tempat"
 	"splk-backend/internal/user"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "splk-backend/docs"
 )
 
 // NewRouter membuat instance router Gin dengan seluruh middleware dasar dan rute modul terpasang.
@@ -35,16 +40,21 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 
 	router := gin.New()
 
-	// 1. Pasang middleware dasar sesuai ARCHITECTURE.md bagian 5 dan 12
+	// 1. Pasang middleware dasar dan hardening keamanan (ARCHITECTURE.md & Tahap 13)
 	router.Use(
 		middleware.RequestID(),
 		middleware.Logger(logger),
 		middleware.Recovery(logger),
 		middleware.CORS(cfg.CORSAllowedOrigins),
+		middleware.SecurityHeaders(),
+		middleware.BodySizeLimit(int64(cfg.MaxUploadMB)*1024*1024),
 	)
 
-	// 2. Route infrastruktur: /health
+	// 2. Route infrastruktur: /health dan /swagger (hanya development)
 	router.GET("/health", HealthHandler(pool))
+	if cfg.AppEnv == "development" {
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
 	// 3. Setup Clock dan Platform Dependencies
 	loc := cfg.AppTimezone
@@ -112,13 +122,18 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	// 7. Middleware Keamanan
 	authMiddleware := middleware.Auth(cfg.JWTSecret)
 	adminRoleMiddleware := middleware.RequireRoles("admin")
+	loginLimit := 5
+	if cfg.AppEnv == "testing" || cfg.AppEnv == "test" || gin.Mode() == gin.TestMode || os.Getenv("TEST_DATABASE_URL") != "" {
+		loginLimit = 100
+	}
+	loginLimiter := middleware.NewLoginRateLimiter(loginLimit, 1*time.Minute)
 
 	// 8. Rute /api/v1
 	apiV1 := router.Group("/api/v1")
 	{
 		// Modul Auth
 		authGroup := apiV1.Group("/auth")
-		auth.RegisterRoutes(authGroup, authHandler, authMiddleware)
+		auth.RegisterRoutes(authGroup, authHandler, authMiddleware, loginLimiter.Middleware())
 
 		// Rute Admin /api/v1/admin (RequireRoles("admin"))
 		adminGroup := apiV1.Group("/admin", authMiddleware, adminRoleMiddleware)
@@ -151,7 +166,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	{
 		// /auth
 		authDirect := router.Group("/auth")
-		auth.RegisterRoutes(authDirect, authHandler, authMiddleware)
+		auth.RegisterRoutes(authDirect, authHandler, authMiddleware, loginLimiter.Middleware())
 
 		// /admin
 		adminDirect := router.Group("/admin", authMiddleware, adminRoleMiddleware)

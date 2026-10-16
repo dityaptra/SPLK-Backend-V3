@@ -19,7 +19,17 @@ func NewHandler(svc Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// CreateKelompok menangani endpoint POST /admin/kkn/kelompok.
+// CreateKelompok godoc
+// @Summary Buat kelompok KKN baru
+// @Tags KKN
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body CreateKelompokRequest true "Data kelompok KKN"
+// @Success 201 {object} KelompokDetailResponse
+// @Failure 400 {object} httpx.AppError
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/kkn/kelompok [post]
 func (h *Handler) CreateKelompok(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -42,7 +52,15 @@ func (h *Handler) CreateKelompok(c *gin.Context) {
 	httpx.Created(c, res)
 }
 
-// GetKelompok menangani endpoint GET /admin/kkn/kelompok/:id dan GET /kkn/kelompok/:id.
+// GetKelompok godoc
+// @Summary Detail kelompok KKN
+// @Tags KKN
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Kelompok KKN"
+// @Success 200 {object} KelompokDetailResponse
+// @Failure 404 {object} httpx.AppError
+// @Router /kkn/kelompok/{id} [get]
 func (h *Handler) GetKelompok(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -65,7 +83,16 @@ func (h *Handler) GetKelompok(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// ListKelompok menangani endpoint GET /admin/kkn/kelompok.
+// ListKelompok godoc
+// @Summary Daftar kelompok KKN
+// @Tags KKN
+// @Security BearerAuth
+// @Produce json
+// @Param id_periode query int false "Filter periode"
+// @Param page query int false "Nomor halaman"
+// @Param per_page query int false "Jumlah data per halaman"
+// @Success 200 {object} map[string]interface{}
+// @Router /admin/kkn/kelompok [get]
 func (h *Handler) ListKelompok(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -90,7 +117,17 @@ func (h *Handler) ListKelompok(c *gin.Context) {
 	httpx.List(c, items, meta)
 }
 
-// AddAnggota menangani endpoint POST /admin/kkn/kelompok/:id/anggota.
+// AddAnggota godoc
+// @Summary Tambah anggota ke kelompok KKN
+// @Tags KKN
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Kelompok KKN"
+// @Param request body AddAnggotaRequest true "ID pendaftaran peserta"
+// @Success 200 {object} KelompokDetailResponse
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/kkn/kelompok/{id}/anggota [post]
 func (h *Handler) AddAnggota(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -119,7 +156,16 @@ func (h *Handler) AddAnggota(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// RemoveAnggota menangani endpoint DELETE /admin/kkn/kelompok/:id/anggota/:pid.
+// RemoveAnggota godoc
+// @Summary Keluarkan anggota dari kelompok KKN
+// @Tags KKN
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Kelompok KKN"
+// @Param pid path int true "ID Pendaftaran Peserta"
+// @Success 200 {object} map[string]string
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/kkn/kelompok/{id}/anggota/{pid} [delete]
 func (h *Handler) RemoveAnggota(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -148,7 +194,17 @@ func (h *Handler) RemoveAnggota(c *gin.Context) {
 	httpx.OK(c, gin.H{"message": "anggota berhasil dikeluarkan dari kelompok KKN"})
 }
 
-// SetDosenPembimbing menangani endpoint PUT /admin/kkn/kelompok/:id/dosen-pembimbing.
+// SetDosenPembimbing godoc
+// @Summary Tetapkan dosen pembimbing kelompok KKN
+// @Tags KKN
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Kelompok KKN"
+// @Param request body SetDosenPembimbingKelompokRequest true "ID Dosen Pembimbing"
+// @Success 200 {object} KelompokDetailResponse
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/kkn/kelompok/{id}/dosen-pembimbing [put]
 func (h *Handler) SetDosenPembimbing(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {
@@ -177,7 +233,17 @@ func (h *Handler) SetDosenPembimbing(c *gin.Context) {
 	httpx.OK(c, res)
 }
 
-// SetPembimbingLapangan menangani endpoint PUT /admin/kkn/kelompok/:id/pembimbing-lapangan.
+// SetPembimbingLapangan godoc
+// @Summary Tetapkan kepala desa / pembimbing lapangan kelompok KKN
+// @Tags KKN
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Kelompok KKN"
+// @Param request body SetPembimbingLapanganKelompokRequest true "ID Pembimbing Lapangan"
+// @Success 200 {object} KelompokDetailResponse
+// @Failure 422 {object} httpx.AppError
+// @Router /admin/kkn/kelompok/{id}/pembimbing-lapangan [put]
 func (h *Handler) SetPembimbingLapangan(c *gin.Context) {
 	actor, ok := middleware.ActorFrom(c)
 	if !ok {

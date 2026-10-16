@@ -32,3 +32,14 @@ func List(c *gin.Context, data any, meta PaginationMeta) {
 		"meta": meta,
 	})
 }
+
+// ListResponse merepresentasikan format JSON response untuk endpoint daftar yang dipaginasi.
+type ListResponse struct {
+	Data any            `json:"data"`
+	Meta PaginationMeta `json:"meta"`
+}
+
+// SingleResponse merepresentasikan format JSON response untuk data tunggal.
+type SingleResponse struct {
+	Data any `json:"data"`
+}
