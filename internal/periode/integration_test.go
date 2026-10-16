@@ -159,6 +159,7 @@ func TestIntegration_PeriodeLifecycle(t *testing.T) {
 	// Bersihkan data periode dan peserta sebelumnya di database test
 	_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
 	_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
+	_, _ = pool.Exec(ctx, "DELETE FROM kelompok_kkn")
 	_, _ = pool.Exec(ctx, "DELETE FROM periode")
 
 	prodiID := ensureProdi(t, pool)

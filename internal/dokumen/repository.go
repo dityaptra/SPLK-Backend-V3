@@ -18,6 +18,7 @@ type Repository interface {
 	Delete(ctx context.Context, db database.DBTX, id int) error
 	GetPendaftaranInfo(ctx context.Context, db database.DBTX, idPeserta int) (*PendaftaranInfo, error)
 	CheckKelompokAccess(ctx context.Context, db database.DBTX, idKelompok int, userID int, userRoles []string, isWrite bool) (bool, error)
+	GetKelompokMemberIDs(ctx context.Context, db database.DBTX, idKelompok int) ([]int, error)
 }
 
 type pgRepository struct{}
@@ -218,4 +219,26 @@ func (r *pgRepository) CheckKelompokAccess(ctx context.Context, db database.DBTX
 	}
 
 	return false, nil
+}
+
+func (r *pgRepository) GetKelompokMemberIDs(ctx context.Context, db database.DBTX, idKelompok int) ([]int, error) {
+	const q = `SELECT id FROM peserta_program WHERE id_kelompok_kkn = $1 AND status = 'diajukan'`
+	rows, err := db.Query(ctx, q, idKelompok)
+	if err != nil {
+		return nil, fmt.Errorf("query kelompok members: %w", err)
+	}
+	defer rows.Close()
+
+	var ids []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scan kelompok member id: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate kelompok members: %w", err)
+	}
+	return ids, nil
 }

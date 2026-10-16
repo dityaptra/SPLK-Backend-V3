@@ -180,6 +180,7 @@ func TestIntegration_PendaftaranInti(t *testing.T) {
 	// Bersihkan data pendaftaran dan periode di test database
 	_, _ = pool.Exec(ctx, "DELETE FROM dokumen")
 	_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
+	_, _ = pool.Exec(ctx, "DELETE FROM kelompok_kkn")
 	_, _ = pool.Exec(ctx, "DELETE FROM periode")
 
 	prodiID := ensureAkademik(t, pool)
@@ -421,6 +422,7 @@ func TestIntegration_CabangMagang(t *testing.T) {
 	_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 	_, _ = pool.Exec(ctx, "DELETE FROM pembimbing_lapangan")
 	_, _ = pool.Exec(ctx, "DELETE FROM tempat_program")
+	_, _ = pool.Exec(ctx, "DELETE FROM kelompok_kkn")
 	_, _ = pool.Exec(ctx, "DELETE FROM periode")
 	defer func() {
 		_, _ = pool.Exec(ctx, "DELETE FROM log_aktivitas")
@@ -428,6 +430,7 @@ func TestIntegration_CabangMagang(t *testing.T) {
 		_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 		_, _ = pool.Exec(ctx, "DELETE FROM pembimbing_lapangan")
 		_, _ = pool.Exec(ctx, "DELETE FROM tempat_program")
+		_, _ = pool.Exec(ctx, "DELETE FROM kelompok_kkn")
 		_, _ = pool.Exec(ctx, "DELETE FROM periode")
 	}()
 
@@ -829,6 +832,7 @@ func TestIntegration_CabangAM(t *testing.T) {
 	_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 	_, _ = pool.Exec(ctx, "DELETE FROM pembimbing_lapangan")
 	_, _ = pool.Exec(ctx, "DELETE FROM tempat_program")
+	_, _ = pool.Exec(ctx, "DELETE FROM kelompok_kkn")
 	_, _ = pool.Exec(ctx, "DELETE FROM periode")
 	defer func() {
 		_, _ = pool.Exec(ctx, "DELETE FROM log_aktivitas")
@@ -836,6 +840,7 @@ func TestIntegration_CabangAM(t *testing.T) {
 		_, _ = pool.Exec(ctx, "DELETE FROM peserta_program")
 		_, _ = pool.Exec(ctx, "DELETE FROM pembimbing_lapangan")
 		_, _ = pool.Exec(ctx, "DELETE FROM tempat_program")
+		_, _ = pool.Exec(ctx, "DELETE FROM kelompok_kkn")
 		_, _ = pool.Exec(ctx, "DELETE FROM periode")
 	}()
 

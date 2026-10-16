@@ -14,6 +14,7 @@ import (
 	"splk-backend/internal/auth"
 	"splk-backend/internal/config"
 	"splk-backend/internal/dokumen"
+	"splk-backend/internal/kkn"
 	"splk-backend/internal/middleware"
 	"splk-backend/internal/pendaftaran"
 	"splk-backend/internal/periode"
@@ -74,6 +75,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	accessSvc := pendaftaran.NewAccessService(pool, pendaftaranRepo)
 
 	dokumenRepo := dokumen.NewRepository()
+	kknRepo := kkn.NewRepository()
 
 	authSvc := auth.NewService(authRepo, pool, cfg, clk, profileResolver)
 	userSvc := user.NewService(userRepo, pool)
@@ -82,6 +84,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	periodeSvc := periode.NewService(periodeRepo, pool, clk, actLogger)
 	pendaftaranSvc := pendaftaran.NewService(pendaftaranRepo, pool, clk, krsValidator, eligChecker, accessSvc, actLogger)
 	dokumenSvc := dokumen.NewService(dokumenRepo, pool, st, accessSvc, cfg)
+	kknSvc := kkn.NewService(kknRepo, pool, actLogger)
 
 	// 6. Inisialisasi Handlers
 	authHandler := auth.NewHandler(authSvc)
@@ -91,6 +94,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	periodeHandler := periode.NewHandler(periodeSvc)
 	pendaftaranHandler := pendaftaran.NewHandler(pendaftaranSvc)
 	dokumenHandler := dokumen.NewHandler(dokumenSvc, cfg)
+	kknHandler := kkn.NewHandler(kknSvc)
 
 	// 7. Middleware Keamanan
 	authMiddleware := middleware.Auth(cfg.JWTSecret)
@@ -111,9 +115,10 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			tempat.RegisterRoutes(adminGroup, nil, tempatHandler)
 			periode.RegisterRoutes(adminGroup, nil, periodeHandler)
 			pendaftaran.RegisterRoutes(adminGroup, nil, pendaftaranHandler)
+			kkn.RegisterRoutes(adminGroup, nil, kknHandler)
 		}
 
-		// Rute Terautentikasi /api/v1/ (Akademik, Tempat, Periode, Pendaftaran, & Dokumen)
+		// Rute Terautentikasi /api/v1/ (Akademik, Tempat, Periode, Pendaftaran, Dokumen, & KKN)
 		authGroupGeneral := apiV1.Group("", authMiddleware)
 		{
 			akademik.RegisterRoutes(nil, authGroupGeneral, akademikHandler)
@@ -121,6 +126,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			periode.RegisterRoutes(nil, authGroupGeneral, periodeHandler)
 			pendaftaran.RegisterRoutes(nil, authGroupGeneral, pendaftaranHandler)
 			dokumen.RegisterRoutes(authGroupGeneral, dokumenHandler)
+			kkn.RegisterRoutes(nil, authGroupGeneral, kknHandler)
 		}
 	}
 
@@ -138,9 +144,10 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			tempat.RegisterRoutes(adminDirect, nil, tempatHandler)
 			periode.RegisterRoutes(adminDirect, nil, periodeHandler)
 			pendaftaran.RegisterRoutes(adminDirect, nil, pendaftaranHandler)
+			kkn.RegisterRoutes(adminDirect, nil, kknHandler)
 		}
 
-		// /tempat-program, /periode, /pendaftaran, /dokumen, /fakultas, /jurusan, /program-studi langsung
+		// /tempat-program, /periode, /pendaftaran, /dokumen, /fakultas, /jurusan, /program-studi, /kkn langsung
 		authDirectGeneral := router.Group("", authMiddleware)
 		{
 			akademik.RegisterRoutes(nil, authDirectGeneral, akademikHandler)
@@ -148,6 +155,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			periode.RegisterRoutes(nil, authDirectGeneral, periodeHandler)
 			pendaftaran.RegisterRoutes(nil, authDirectGeneral, pendaftaranHandler)
 			dokumen.RegisterRoutes(authDirectGeneral, dokumenHandler)
+			kkn.RegisterRoutes(nil, authDirectGeneral, kknHandler)
 		}
 	}
 

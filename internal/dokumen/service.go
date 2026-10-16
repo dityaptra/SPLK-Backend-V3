@@ -202,6 +202,13 @@ func (s *service) UploadKelompokDokumen(ctx context.Context, actor middleware.Ac
 		return nil, fmt.Errorf("simpan metadata dokumen kelompok: %w", err)
 	}
 
+	// Coba transisi kesiapan diajukan -> berjalan untuk seluruh anggota kelompok
+	if memberIDs, err := s.repo.GetKelompokMemberIDs(ctx, tx, idKelompok); err == nil {
+		for _, mID := range memberIDs {
+			_, _ = pendaftaran.TryTransitionToBerjalan(ctx, tx, mID)
+		}
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		_ = s.storage.Delete(ctx, relPath)
 		return nil, fmt.Errorf("commit tx dokumen kelompok: %w", err)

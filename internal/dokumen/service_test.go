@@ -114,6 +114,10 @@ func (m *mockDokumenRepo) CheckKelompokAccess(ctx context.Context, db database.D
 	return true, nil
 }
 
+func (m *mockDokumenRepo) GetKelompokMemberIDs(ctx context.Context, db database.DBTX, idKelompok int) ([]int, error) {
+	return nil, nil
+}
+
 func TestUploadPesertaDokumen_AccessAndStatusRules(t *testing.T) {
 	st := newMockStorage()
 
