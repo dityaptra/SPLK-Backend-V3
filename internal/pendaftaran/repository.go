@@ -36,7 +36,9 @@ type Repository interface {
 	FindPembimbingLapangan(ctx context.Context, db database.DBTX, id int) (*PembimbingLapanganCheck, error)
 	FindDosen(ctx context.Context, db database.DBTX, id int) (*DosenCheck, error)
 	UpdatePenempatanMagang(ctx context.Context, db database.DBTX, idPeserta int, idTempat int, idPembimbing int) error
+	UpdatePenempatanAM(ctx context.Context, db database.DBTX, idPeserta int, idTempat int, idPembimbing int) error
 	UpdateDosenPembimbing(ctx context.Context, db database.DBTX, idPeserta int, idDosen int) error
+	UpdateDosenPenguji(ctx context.Context, db database.DBTX, idPeserta int, idDosen int) error
 }
 
 type pgRepository struct{}
@@ -566,6 +568,41 @@ func (r *pgRepository) UpdateDosenPembimbing(ctx context.Context, db database.DB
 	res, err := db.Exec(ctx, q, idDosen, idPeserta)
 	if err != nil {
 		return fmt.Errorf("update dosen pembimbing peserta %d: %w", idPeserta, err)
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
+func (r *pgRepository) UpdatePenempatanAM(ctx context.Context, db database.DBTX, idPeserta int, idTempat int, idPembimbing int) error {
+	const q = `
+		UPDATE peserta_program
+		SET id_tempat_program = $1,
+		    id_pembimbing_lapangan = $2,
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE id = $3
+	`
+	res, err := db.Exec(ctx, q, idTempat, idPembimbing, idPeserta)
+	if err != nil {
+		return fmt.Errorf("update penempatan asistensi mengajar peserta %d: %w", idPeserta, err)
+	}
+	if res.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
+func (r *pgRepository) UpdateDosenPenguji(ctx context.Context, db database.DBTX, idPeserta int, idDosen int) error {
+	const q = `
+		UPDATE peserta_program
+		SET id_dosen_penguji = $1,
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE id = $2
+	`
+	res, err := db.Exec(ctx, q, idDosen, idPeserta)
+	if err != nil {
+		return fmt.Errorf("update dosen penguji peserta %d: %w", idPeserta, err)
 	}
 	if res.RowsAffected() == 0 {
 		return pgx.ErrNoRows

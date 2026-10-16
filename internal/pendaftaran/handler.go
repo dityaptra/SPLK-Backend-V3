@@ -179,3 +179,64 @@ func (h *Handler) SetDosenPembimbing(c *gin.Context) {
 
 	httpx.OK(c, res)
 }
+
+// AdminPenempatan menangani pemetaan sekolah penempatan dan guru pamong oleh admin (PUT /admin/pendaftaran/:id/penempatan).
+func (h *Handler) AdminPenempatan(c *gin.Context) {
+	actor, ok := middleware.ActorFrom(c)
+	if !ok {
+		httpx.WriteError(c, httpx.Unauthorized("UNAUTHORIZED", "tidak terautentikasi"))
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		httpx.WriteError(c, httpx.BadRequest("ID_TIDAK_VALID", "parameter id harus berupa angka positif"))
+		return
+	}
+
+	var req AdminPenempatanRequest
+	if err := httpx.BindJSON(c, &req); err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	res, err := h.svc.AdminPenempatan(c.Request.Context(), actor, id, req)
+	if err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	httpx.OK(c, res)
+}
+
+// SetDosenPenguji menangani penetapan dosen penguji oleh admin (PUT /admin/pendaftaran/:id/dosen-penguji).
+func (h *Handler) SetDosenPenguji(c *gin.Context) {
+	actor, ok := middleware.ActorFrom(c)
+	if !ok {
+		httpx.WriteError(c, httpx.Unauthorized("UNAUTHORIZED", "tidak terautentikasi"))
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		httpx.WriteError(c, httpx.BadRequest("ID_TIDAK_VALID", "parameter id harus berupa angka positif"))
+		return
+	}
+
+	var req SetDosenPengujiRequest
+	if err := httpx.BindJSON(c, &req); err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	ip := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
+	res, err := h.svc.SetDosenPenguji(c.Request.Context(), actor, id, req, ip, userAgent)
+	if err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	httpx.OK(c, res)
+}

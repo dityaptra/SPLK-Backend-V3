@@ -17,6 +17,17 @@ type SetDosenPembimbingRequest struct {
 	IDDosen int `json:"id_dosen" binding:"required"`
 }
 
+// AdminPenempatanRequest adalah DTO request untuk PUT /admin/pendaftaran/:id/penempatan.
+type AdminPenempatanRequest struct {
+	IDTempatProgram      int `json:"id_tempat_program" binding:"required"`
+	IDPembimbingLapangan int `json:"id_pembimbing_lapangan" binding:"required"`
+}
+
+// SetDosenPengujiRequest adalah DTO request untuk PUT /admin/pendaftaran/:id/dosen-penguji.
+type SetDosenPengujiRequest struct {
+	IDDosen int `json:"id_dosen" binding:"required"`
+}
+
 // PendaftaranFilter adalah opsi penyaringan untuk GET /pendaftaran.
 type PendaftaranFilter struct {
 	IDPeriode    *int

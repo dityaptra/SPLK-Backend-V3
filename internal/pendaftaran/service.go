@@ -26,7 +26,9 @@ type Service interface {
 	GetDetail(ctx context.Context, actor middleware.Actor, idPeserta int) (*PendaftaranDetail, error)
 	List(ctx context.Context, actor middleware.Actor, filter PendaftaranFilter, p httpx.Pagination) ([]PendaftaranListItem, httpx.PaginationMeta, error)
 	PenempatanMagang(ctx context.Context, actor middleware.Actor, idPeserta int, req PenempatanMagangRequest) (*PendaftaranDetail, error)
+	AdminPenempatan(ctx context.Context, actor middleware.Actor, idPeserta int, req AdminPenempatanRequest) (*PendaftaranDetail, error)
 	SetDosenPembimbing(ctx context.Context, actor middleware.Actor, idPeserta int, req SetDosenPembimbingRequest, ip, userAgent string) (*PendaftaranDetail, error)
+	SetDosenPenguji(ctx context.Context, actor middleware.Actor, idPeserta int, req SetDosenPengujiRequest, ip, userAgent string) (*PendaftaranDetail, error)
 }
 
 type pendaftaranService struct {
@@ -476,6 +478,148 @@ func (s *pendaftaranService) SetDosenPembimbing(ctx context.Context, actor middl
 	// 6. Catat ke log_aktivitas
 	if s.logger != nil {
 		_ = s.logger.Log(ctx, actor.UserID, "tetapkan_dosen_pembimbing", true, ip, userAgent)
+	}
+
+	return s.GetDetail(ctx, actor, idPeserta)
+}
+
+// AdminPenempatan menangani pemetaan sekolah penempatan dan guru pamong oleh admin untuk program asistensi mengajar (BR-05).
+func (s *pendaftaranService) AdminPenempatan(ctx context.Context, actor middleware.Actor, idPeserta int, req AdminPenempatanRequest) (*PendaftaranDetail, error) {
+	// 1. Hak akses: hanya admin
+	if !actor.HasRole("admin") {
+		return nil, httpx.Forbidden("HAK_AKSES_DITOLAK", "hanya admin yang dapat memetakan penempatan program asistensi mengajar")
+	}
+
+	// 2. Ambil pendaftaran
+	peserta, err := s.repo.FindPesertaByID(ctx, s.pool, idPeserta)
+	if err != nil {
+		return nil, fmt.Errorf("ambil peserta: %w", err)
+	}
+	if peserta == nil {
+		return nil, httpx.NotFound("PENDAFTARAN_TIDAK_DITEMUKAN", "pendaftaran tidak ditemukan")
+	}
+
+	// 3. Validasi jenis program: berlaku untuk jenis asistensi_mengajar
+	// Untuk jenis lain, balas 422 dengan pesan jelas (magang dipilih mahasiswa, KKN lewat kelompok).
+	if peserta.JenisProgram == "magang" {
+		return nil, httpx.Unprocessable("JENIS_PROGRAM_TIDAK_SESUAI", "penempatan magang dipilih mandiri oleh mahasiswa melalui endpoint penempatan-magang")
+	}
+	if peserta.JenisProgram == "kkn" {
+		return nil, httpx.Unprocessable("JENIS_PROGRAM_TIDAK_SESUAI", "penempatan KKN ditentukan melalui kelompok KKN")
+	}
+	if peserta.JenisProgram != "asistensi_mengajar" {
+		return nil, httpx.Unprocessable("JENIS_PROGRAM_TIDAK_SESUAI", "endpoint ini hanya berlaku untuk program asistensi mengajar")
+	}
+
+	if peserta.Status == StatusBerjalan {
+		return nil, httpx.Unprocessable("STATUS_TIDAK_VALID", "perubahan penempatan ditolak karena pendaftaran sudah berjalan")
+	}
+	if peserta.Status != StatusDiajukan {
+		return nil, httpx.Unprocessable("STATUS_TIDAK_VALID", "perubahan penempatan hanya dapat dilakukan saat status diajukan")
+	}
+
+	// 4. Validasi BR-05:
+	// a. Tempat program harus berjenis asistensi_mengajar dan is_aktif
+	tempat, err := s.repo.FindTempatProgram(ctx, s.pool, req.IDTempatProgram)
+	if err != nil {
+		return nil, fmt.Errorf("cek tempat program: %w", err)
+	}
+	if tempat == nil || tempat.JenisProgram != "asistensi_mengajar" || !tempat.IsAktif {
+		return nil, httpx.Unprocessable("TEMPAT_TIDAK_VALID", "tempat program harus berjenis asistensi_mengajar dan aktif")
+	}
+
+	// b. Pembimbing lapangan harus berjenis guru_pamong dan milik tempat tersebut
+	pl, err := s.repo.FindPembimbingLapangan(ctx, s.pool, req.IDPembimbingLapangan)
+	if err != nil {
+		return nil, fmt.Errorf("cek pembimbing lapangan: %w", err)
+	}
+	if pl == nil || pl.Jenis != "guru_pamong" || pl.IDTempatProgram != req.IDTempatProgram {
+		return nil, httpx.Unprocessable("PEMBIMBING_TIDAK_VALID", "pembimbing lapangan harus berjenis guru_pamong dan terdaftar pada sekolah penempatan terkait")
+	}
+
+	// 5. Update dalam transaksi dan jalankan percobaan transisi kesiapan
+	if s.pool != nil {
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("begin tx: %w", err)
+		}
+		defer tx.Rollback(ctx)
+
+		if err := s.repo.UpdatePenempatanAM(ctx, tx, idPeserta, req.IDTempatProgram, req.IDPembimbingLapangan); err != nil {
+			return nil, fmt.Errorf("update penempatan asistensi mengajar: %w", err)
+		}
+
+		_, _ = TryTransitionToBerjalan(ctx, tx, idPeserta)
+
+		if err := tx.Commit(ctx); err != nil {
+			return nil, fmt.Errorf("commit tx penempatan asistensi mengajar: %w", err)
+		}
+	} else {
+		if err := s.repo.UpdatePenempatanAM(ctx, nil, idPeserta, req.IDTempatProgram, req.IDPembimbingLapangan); err != nil {
+			return nil, fmt.Errorf("update penempatan asistensi mengajar: %w", err)
+		}
+	}
+
+	return s.GetDetail(ctx, actor, idPeserta)
+}
+
+// SetDosenPenguji menangani penetapan dosen penguji oleh admin untuk semua jenis program.
+// Menegakkan aturan BR-07 dan mencatat audit ke log_aktivitas.
+func (s *pendaftaranService) SetDosenPenguji(ctx context.Context, actor middleware.Actor, idPeserta int, req SetDosenPengujiRequest, ip, userAgent string) (*PendaftaranDetail, error) {
+	// 1. Hak akses aktor: hanya admin
+	if !actor.HasRole("admin") {
+		return nil, httpx.Forbidden("HAK_AKSES_DITOLAK", "hanya admin yang dapat menetapkan dosen penguji")
+	}
+
+	// 2. Ambil pendaftaran
+	peserta, err := s.repo.FindPesertaByID(ctx, s.pool, idPeserta)
+	if err != nil {
+		return nil, fmt.Errorf("ambil peserta: %w", err)
+	}
+	if peserta == nil {
+		return nil, httpx.NotFound("PENDAFTARAN_TIDAK_DITEMUKAN", "pendaftaran tidak ditemukan")
+	}
+
+	// 3. Validasi keberadaan dosen
+	dosen, err := s.repo.FindDosen(ctx, s.pool, req.IDDosen)
+	if err != nil {
+		return nil, fmt.Errorf("cek dosen: %w", err)
+	}
+	if dosen == nil {
+		return nil, httpx.Unprocessable("DOSEN_TIDAK_DITEMUKAN", "dosen penguji tidak ditemukan")
+	}
+
+	// 4. Validasi BR-07: id_dosen <> id_dosen_pembimbing
+	if peserta.IDDosenPembimbing != nil && *peserta.IDDosenPembimbing == req.IDDosen {
+		return nil, httpx.Unprocessable("DOSEN_PEMBIMBING_SAMA_DENGAN_PENGUJI", "dosen penguji tidak boleh sama dengan dosen pembimbing")
+	}
+
+	// 5. Update dalam transaksi dan jalankan percobaan transisi kesiapan
+	if s.pool != nil {
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("begin tx: %w", err)
+		}
+		defer tx.Rollback(ctx)
+
+		if err := s.repo.UpdateDosenPenguji(ctx, tx, idPeserta, req.IDDosen); err != nil {
+			return nil, fmt.Errorf("update dosen penguji: %w", err)
+		}
+
+		_, _ = TryTransitionToBerjalan(ctx, tx, idPeserta)
+
+		if err := tx.Commit(ctx); err != nil {
+			return nil, fmt.Errorf("commit tx dosen penguji: %w", err)
+		}
+	} else {
+		if err := s.repo.UpdateDosenPenguji(ctx, nil, idPeserta, req.IDDosen); err != nil {
+			return nil, fmt.Errorf("update dosen penguji: %w", err)
+		}
+	}
+
+	// 6. Catat ke log_aktivitas
+	if s.logger != nil {
+		_ = s.logger.Log(ctx, actor.UserID, "tetapkan_dosen_penguji", true, ip, userAgent)
 	}
 
 	return s.GetDetail(ctx, actor, idPeserta)

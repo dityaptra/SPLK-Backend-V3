@@ -110,6 +110,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			akademik.RegisterRoutes(adminGroup, nil, akademikHandler)
 			tempat.RegisterRoutes(adminGroup, nil, tempatHandler)
 			periode.RegisterRoutes(adminGroup, nil, periodeHandler)
+			pendaftaran.RegisterRoutes(adminGroup, nil, pendaftaranHandler)
 		}
 
 		// Rute Terautentikasi /api/v1/ (Akademik, Tempat, Periode, Pendaftaran, & Dokumen)
@@ -118,7 +119,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			akademik.RegisterRoutes(nil, authGroupGeneral, akademikHandler)
 			tempat.RegisterRoutes(nil, authGroupGeneral, tempatHandler)
 			periode.RegisterRoutes(nil, authGroupGeneral, periodeHandler)
-			pendaftaran.RegisterRoutes(authGroupGeneral, pendaftaranHandler)
+			pendaftaran.RegisterRoutes(nil, authGroupGeneral, pendaftaranHandler)
 			dokumen.RegisterRoutes(authGroupGeneral, dokumenHandler)
 		}
 	}
@@ -136,6 +137,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			akademik.RegisterRoutes(adminDirect, nil, akademikHandler)
 			tempat.RegisterRoutes(adminDirect, nil, tempatHandler)
 			periode.RegisterRoutes(adminDirect, nil, periodeHandler)
+			pendaftaran.RegisterRoutes(adminDirect, nil, pendaftaranHandler)
 		}
 
 		// /tempat-program, /periode, /pendaftaran, /dokumen, /fakultas, /jurusan, /program-studi langsung
@@ -144,7 +146,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			akademik.RegisterRoutes(nil, authDirectGeneral, akademikHandler)
 			tempat.RegisterRoutes(nil, authDirectGeneral, tempatHandler)
 			periode.RegisterRoutes(nil, authDirectGeneral, periodeHandler)
-			pendaftaran.RegisterRoutes(authDirectGeneral, pendaftaranHandler)
+			pendaftaran.RegisterRoutes(nil, authDirectGeneral, pendaftaranHandler)
 			dokumen.RegisterRoutes(authDirectGeneral, dokumenHandler)
 		}
 	}
