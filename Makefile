@@ -8,7 +8,7 @@ export
 # Variabel
 BINARY_API  = bin/api
 BINARY_SEED = bin/seed
-MIGRATE_DB  ?= $(if $(DATABASE_URL),$(DATABASE_URL),postgres://splk:ganti_password_ini@localhost:5432/splk_db?sslmode=disable)
+MIGRATE_DB  ?= $(if $(DATABASE_URL),$(DATABASE_URL),postgres://$(if $(DB_USER),$(DB_USER),splk):$(if $(DB_PASSWORD),$(DB_PASSWORD),ganti_password_ini)@$(if $(DB_HOST),$(DB_HOST),localhost):$(if $(DB_PORT),$(DB_PORT),5432)/$(if $(DB_NAME),$(DB_NAME),splk_db)?sslmode=$(if $(DB_SSLMODE),$(DB_SSLMODE),disable))
 
 # --- Pengembangan ---
 

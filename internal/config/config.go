@@ -52,14 +52,14 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("APP_ENV harus 'development' atau 'production', diterima: %q", cfg.AppEnv)
 	}
 
-	// APP_PORT (wajib berupa port valid)
-	cfg.AppPort = getEnv("APP_PORT", "8080")
+	// APP_PORT (mendukung APP_PORT atau PORT)
+	cfg.AppPort = getEnv("APP_PORT", getEnv("PORT", "8080"))
 	port, err := strconv.Atoi(cfg.AppPort)
 	if err != nil || port < 1 || port > 65535 {
-		return nil, fmt.Errorf("APP_PORT harus bilangan bulat antara 1-65535, diterima: %q", cfg.AppPort)
+		return nil, fmt.Errorf("APP_PORT/PORT harus bilangan bulat antara 1-65535, diterima: %q", cfg.AppPort)
 	}
 
-	// APP_TIMEZONE (wajib bisa dimuat)
+	// APP_TIMEZONE (default: Asia/Makassar)
 	tzName := getEnv("APP_TIMEZONE", "Asia/Makassar")
 	loc, err := time.LoadLocation(tzName)
 	if err != nil {
@@ -67,10 +67,26 @@ func Load() (*Config, error) {
 	}
 	cfg.AppTimezone = loc
 
-	// DATABASE_URL (wajib)
+	// DATABASE_URL (mendukung DATABASE_URL langsung atau dirangkai dari DB_*)
 	cfg.DatabaseURL = os.Getenv("DATABASE_URL")
 	if cfg.DatabaseURL == "" {
-		return nil, fmt.Errorf("DATABASE_URL wajib diisi")
+		dbHost := getEnv("DB_HOST", "localhost")
+		dbPort := getEnv("DB_PORT", "5432")
+		dbUser := getEnv("DB_USER", "")
+		dbPass := getEnv("DB_PASSWORD", "")
+		dbName := getEnv("DB_NAME", "")
+		dbSSL := getEnv("DB_SSLMODE", "disable")
+
+		if dbUser != "" && dbName != "" {
+			if dbPass != "" {
+				cfg.DatabaseURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", dbUser, dbPass, dbHost, dbPort, dbName, dbSSL)
+			} else {
+				cfg.DatabaseURL = fmt.Sprintf("postgres://%s@%s:%s/%s?sslmode=%s", dbUser, dbHost, dbPort, dbName, dbSSL)
+			}
+		}
+	}
+	if cfg.DatabaseURL == "" {
+		return nil, fmt.Errorf("DATABASE_URL atau variabel koneksi DB_* wajib diisi")
 	}
 
 	// JWT_SECRET (wajib, minimal 32 karakter)
@@ -79,22 +95,40 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("JWT_SECRET wajib diisi dan minimal 32 karakter (diterima: %d karakter)", len(cfg.JWTSecret))
 	}
 
-	// JWT_ACCESS_TTL (default: 15m)
-	accessTTL := getEnv("JWT_ACCESS_TTL", "15m")
-	cfg.JWTAccessTTL, err = time.ParseDuration(accessTTL)
-	if err != nil {
-		return nil, fmt.Errorf("JWT_ACCESS_TTL %q tidak valid: %w", accessTTL, err)
+	// JWT_ACCESS_TTL (mendukung JWT_ACCESS_TTL atau JWT_ACCESS_HOURS)
+	if accessTTL := os.Getenv("JWT_ACCESS_TTL"); accessTTL != "" {
+		cfg.JWTAccessTTL, err = time.ParseDuration(accessTTL)
+		if err != nil {
+			return nil, fmt.Errorf("JWT_ACCESS_TTL %q tidak valid: %w", accessTTL, err)
+		}
+	} else if accessHours := os.Getenv("JWT_ACCESS_HOURS"); accessHours != "" {
+		h, errAtoi := strconv.Atoi(accessHours)
+		if errAtoi != nil || h <= 0 {
+			return nil, fmt.Errorf("JWT_ACCESS_HOURS harus angka positif, diterima: %q", accessHours)
+		}
+		cfg.JWTAccessTTL = time.Duration(h) * time.Hour
+	} else {
+		cfg.JWTAccessTTL = 15 * time.Minute
 	}
 
-	// JWT_REFRESH_TTL (default: 168h = 7 hari)
-	refreshTTL := getEnv("JWT_REFRESH_TTL", "168h")
-	cfg.JWTRefreshTTL, err = time.ParseDuration(refreshTTL)
-	if err != nil {
-		return nil, fmt.Errorf("JWT_REFRESH_TTL %q tidak valid: %w", refreshTTL, err)
+	// JWT_REFRESH_TTL (mendukung JWT_REFRESH_TTL atau JWT_REFRESH_DAYS)
+	if refreshTTL := os.Getenv("JWT_REFRESH_TTL"); refreshTTL != "" {
+		cfg.JWTRefreshTTL, err = time.ParseDuration(refreshTTL)
+		if err != nil {
+			return nil, fmt.Errorf("JWT_REFRESH_TTL %q tidak valid: %w", refreshTTL, err)
+		}
+	} else if refreshDays := os.Getenv("JWT_REFRESH_DAYS"); refreshDays != "" {
+		d, errAtoi := strconv.Atoi(refreshDays)
+		if errAtoi != nil || d <= 0 {
+			return nil, fmt.Errorf("JWT_REFRESH_DAYS harus angka positif, diterima: %q", refreshDays)
+		}
+		cfg.JWTRefreshTTL = time.Duration(d) * 24 * time.Hour
+	} else {
+		cfg.JWTRefreshTTL = 168 * time.Hour
 	}
 
-	// UPLOAD_DIR (default: ./uploads)
-	cfg.UploadDir = getEnv("UPLOAD_DIR", "./uploads")
+	// UPLOAD_DIR (mendukung UPLOAD_DIR atau UPLOAD_PATH)
+	cfg.UploadDir = getEnv("UPLOAD_DIR", getEnv("UPLOAD_PATH", "./uploads"))
 
 	// MAX_UPLOAD_MB (wajib > 0, default: 5)
 	maxUpload := getEnv("MAX_UPLOAD_MB", "5")
