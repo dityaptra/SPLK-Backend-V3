@@ -1,0 +1,1237 @@
+{
+	"info": {
+		"_postman_id": "splk-am-e2e-collection",
+		"name": "SPLK - Alur Khusus Asistensi Mengajar (AM)",
+		"description": "Koleksi pengujian Postman end-to-end untuk program Asistensi Mengajar (AM). Mencakup: setup master sekolah & guru pamong oleh Admin, pendaftaran mahasiswa, pemetaan sekolah oleh Admin, penetapan dosen pembimbing & penguji, unggah dokumen proker, transisi otomatis ke status berjalan, pengisian jurnal mengajar & logbook, penutupan periode, hingga penilaian oleh 3 penilai (Pembimbing, Penguji, Guru Pamong).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Setup Master Data (Admin)",
+			"item": [
+				{
+					"name": "1.1 Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_admin\", json.data.token);",
+									"    console.log(\"Token Admin tersimpan!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"AdminPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "1.2 Buat Tempat Program AM (Sekolah)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_sekolah_am\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nama\": \"SMA Negeri 1 Singaraja\",\n  \"jenis_program\": \"asistensi_mengajar\",\n  \"alamat\": \"Jl. Pramuka No. 1\",\n  \"kota\": \"Singaraja\",\n  \"kontak\": \"036222345\",\n  \"is_aktif\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/tempat-program",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "tempat-program"]
+						}
+					}
+				},
+				{
+					"name": "1.3 Buat Akun Guru Pamong Sekolah",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_guru_pamong\", json.data.id);",
+									"    pm.collectionVariables.set(\"username_guru_pamong\", json.data.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"guru_am_{{$randomInt}}\",\n  \"email\": \"guru_{{$randomInt}}@sman1singaraja.sch.id\",\n  \"password\": \"GuruPass123!\",\n  \"id_tempat_program\": {{id_sekolah_am}},\n  \"jenis\": \"guru_pamong\",\n  \"nama\": \"Dra. Ni Made Wardani, M.Pd.\",\n  \"jabatan\": \"Guru Pamong TIK\",\n  \"kontak\": \"081234889900\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/pembimbing-lapangan",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "pembimbing-lapangan"]
+						}
+					}
+				},
+				{
+					"name": "1.4 Buat Akun Dosen Pembimbing AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_dosen_pembimbing_am\", json.data.id);",
+									"    pm.collectionVariables.set(\"username_dosen_pembimbing_am\", json.data.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"dosen_am_pemb_{{$randomInt}}\",\n  \"email\": \"dos_am_pemb_{{$randomInt}}@undiksha.ac.id\",\n  \"password\": \"DosenPass123!\",\n  \"id_prodi\": 1,\n  \"nip\": \"198703{{$randomInt}}\",\n  \"nama\": \"Dr. I Gede Pembimbing AM, M.Pd.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/dosen",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "dosen"]
+						}
+					}
+				},
+				{
+					"name": "1.5 Buat Akun Dosen Penguji AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_dosen_penguji_am\", json.data.id);",
+									"    pm.collectionVariables.set(\"username_dosen_penguji_am\", json.data.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"dosen_am_peng_{{$randomInt}}\",\n  \"email\": \"dos_am_peng_{{$randomInt}}@undiksha.ac.id\",\n  \"password\": \"DosenPass123!\",\n  \"id_prodi\": 1,\n  \"nip\": \"198804{{$randomInt}}\",\n  \"nama\": \"Dr. Luh Putu Penguji AM, M.Kom.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/dosen",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "dosen"]
+						}
+					}
+				},
+				{
+					"name": "1.6 Buat Akun Mahasiswa Peserta AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.username) {",
+									"    pm.collectionVariables.set(\"username_mhs_am\", json.data.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"mhs_am_{{$randomInt}}\",\n  \"email\": \"mhs_am_{{$randomInt}}@undiksha.ac.id\",\n  \"password\": \"MhsPass123!\",\n  \"id_prodi\": 1,\n  \"nim\": \"221511{{$randomInt}}\",\n  \"nama\": \"Calon Guru Asistensi Mengajar\",\n  \"angkatan\": 2022\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/mahasiswa",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "mahasiswa"]
+						}
+					}
+				},
+				{
+					"name": "1.7 Buat Periode Asistensi Mengajar",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_periode_am\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nama\": \"Asistensi Mengajar Sekolah Semester Ganjil 2026/2027\",\n  \"jenis_program\": \"asistensi_mengajar\",\n  \"tahun_semester\": \"2026/2027-1\",\n  \"tanggal_mulai\": \"2026-08-01\",\n  \"tanggal_selesai\": \"2026-12-31\",\n  \"tanggal_buka_daftar\": \"2026-01-01\",\n  \"tanggal_tutup_daftar\": \"2026-12-30\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/periode",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "periode"]
+						}
+					}
+				},
+				{
+					"name": "1.8 Aktifkan Periode Asistensi Mengajar",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/periode/{{id_periode_am}}/aktifkan",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "periode", "{{id_periode_am}}", "aktifkan"]
+						}
+					}
+				},
+				{
+					"name": "1.9 Setup Instrumen Nilai Pembimbing AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_instrumen_am_pembimbing\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jenis_program\": \"asistensi_mengajar\",\n  \"role_penilai\": \"dosen_pembimbing\",\n  \"nama_aspek\": \"Perangkat Pembelajaran & Bimbingan Pedagogik\",\n  \"bobot\": 35\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/instrumen-penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "instrumen-penilaian"]
+						}
+					}
+				},
+				{
+					"name": "1.10 Setup Instrumen Nilai Guru Pamong",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_instrumen_am_pamong\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jenis_program\": \"asistensi_mengajar\",\n  \"role_penilai\": \"pembimbing_lapangan\",\n  \"nama_aspek\": \"Praktik Mengajar Kelas & Kinerja Sekolah\",\n  \"bobot\": 35\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/instrumen-penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "instrumen-penilaian"]
+						}
+					}
+				},
+				{
+					"name": "1.11 Setup Instrumen Nilai Penguji AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_instrumen_am_penguji\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jenis_program\": \"asistensi_mengajar\",\n  \"role_penilai\": \"dosen_penguji\",\n  \"nama_aspek\": \"Ujian Akhir Simulasi Mengajar & Laporan\",\n  \"bobot\": 30\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/instrumen-penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "instrumen-penilaian"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Alur Pendaftaran & Penempatan Sekolah (Mahasiswa & Admin)",
+			"item": [
+				{
+					"name": "2.1 Login Mahasiswa AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_mhs_am\", json.data.token);",
+									"    console.log(\"Token Mahasiswa AM tersimpan!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username_mhs_am}}\",\n  \"password\": \"MhsPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "2.2 Mahasiswa Mendaftar Periode AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"Status awal adalah diajukan\", function () {",
+									"    pm.expect(json.data.status).to.eql(\"diajukan\");",
+									"});",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_pendaftaran_am\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_am}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_periode\": {{id_periode_am}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran"]
+						}
+					}
+				},
+				{
+					"name": "2.3 Admin Memetakan Penempatan Sekolah & Guru Pamong AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_tempat_program\": {{id_sekolah_am}},\n  \"id_pembimbing_lapangan\": {{id_guru_pamong}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/pendaftaran/{{id_pendaftaran_am}}/penempatan",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "pendaftaran", "{{id_pendaftaran_am}}", "penempatan"]
+						}
+					}
+				},
+				{
+					"name": "2.4 Admin Menetapkan Dosen Pembimbing AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_dosen\": {{id_dosen_pembimbing_am}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_am}}/dosen-pembimbing",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_am}}", "dosen-pembimbing"]
+						}
+					}
+				},
+				{
+					"name": "2.5 Admin Menetapkan Dosen Penguji AM (BR-07)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_dosen\": {{id_dosen_penguji_am}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/pendaftaran/{{id_pendaftaran_am}}/dosen-penguji",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "pendaftaran", "{{id_pendaftaran_am}}", "dosen-penguji"]
+						}
+					}
+				},
+				{
+					"name": "2.6 Mahasiswa Mengunggah Dokumen Proker AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_am}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "jenis_dokumen",
+									"value": "proker",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"description": "Pilih file berkas Program Kerja (PDF/DOCX)",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_am}}/dokumen",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_am}}", "dokumen"]
+						}
+					}
+				},
+				{
+					"name": "2.7 Cek Kesiapan AM: Transisi Otomatis ke 'berjalan'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"Status peserta AM otomatis berjalan!\", function () {",
+									"    pm.expect(json.data.status).to.eql(\"berjalan\");",
+									"});",
+									"pm.test(\"Kesiapan siap = true\", function () {",
+									"    pm.expect(json.data.kesiapan.siap).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_am}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_am}}",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_am}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Pelaksanaan Mengajar di Sekolah (Status: Berjalan)",
+			"item": [
+				{
+					"name": "3.1 Mahasiswa Mengisi Jurnal Harian Mengajar",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_am}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tanggal\": \"2026-10-18\",\n  \"judul\": \"Praktik Pembelajaran Pemrograman Dasar Kelas X\",\n  \"isi\": \"Melaksanakan asistensi mengajar materi algoritma percabangan dan perulangan di Lab Komputer SMA Negeri 1 Singaraja.\",\n  \"kendala\": \"Sebagian siswa baru pertama kali mengenal sintaks pemrograman.\",\n  \"solusi\": \"Diberikan analogi flowchart sehari-hari sebelum implementasi kode.\",\n  \"status\": \"disubmit\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_am}}/jurnal",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_am}}", "jurnal"]
+						}
+					}
+				},
+				{
+					"name": "3.2 Login Dosen Pembimbing AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_dosen_pembimbing_am\", json.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username_dosen_pembimbing_am}}\",\n  \"password\": \"DosenPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "3.3 Dosen Pembimbing Mengisi Logbook Bimbingan AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_dosen_pembimbing_am}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tanggal\": \"2026-10-18\",\n  \"topik_bimbingan\": \"Supervisi Modul Ajar dan Rubrik Asesmen\",\n  \"catatan_perkembangan\": \"Rancangan modul ajar kurikulum merdeka sudah tersusun rapi sesuai fase E.\",\n  \"kendala_mahasiswa\": \"Pengelolaan alokasi waktu pada sesi praktik kelas.\",\n  \"solusi_rekomendasi\": \"Gunakan timer digital interaktif saat siswa mengerjakan LKPD.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_am}}/logbook",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_am}}", "logbook"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Penutupan Periode & Penilaian Paralel 3 Penilai (AM)",
+			"item": [
+				{
+					"name": "4.1 Admin Menyelesaikan Periode AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/periode/{{id_periode_am}}/selesaikan",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "periode", "{{id_periode_am}}", "selesaikan"]
+						}
+					}
+				},
+				{
+					"name": "4.2 Penilai 1: Dosen Pembimbing Memberi Nilai AM (Skor 88)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_dosen_pembimbing_am}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"id_instrumen\": {{id_instrumen_am_pembimbing}},\n      \"nilai\": 88,\n      \"catatan\": \"Perangkat ajar dan kedisiplinan bimbingan sangat baik.\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_am}}/penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_am}}", "penilaian"]
+						}
+					}
+				},
+				{
+					"name": "4.3 Login Dosen Penguji AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_dosen_penguji_am\", json.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username_dosen_penguji_am}}\",\n  \"password\": \"DosenPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "4.4 Penilai 2: Dosen Penguji Memberi Nilai AM (Skor 92)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_dosen_penguji_am}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"id_instrumen\": {{id_instrumen_am_penguji}},\n      \"nilai\": 92,\n      \"catatan\": \"Penguasaan materi pedagogik dan simulasi mengajar sangat mantap.\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_am}}/penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_am}}", "penilaian"]
+						}
+					}
+				},
+				{
+					"name": "4.5 Login Guru Pamong Sekolah",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_guru_pamong\", json.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username_guru_pamong}}\",\n  \"password\": \"GuruPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "4.6 Penilai 3: Guru Pamong Memberi Nilai AM (Skor 95) -> Trigger Nilai Akhir Otomatis",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"Seluruh instrumen terisi = true\", function () {",
+									"    pm.expect(json.data.semua_instrumen_terisi).to.eql(true);",
+									"});",
+									"pm.test(\"Nilai akhir otomatis terhitung dan tidak null\", function () {",
+									"    pm.expect(json.data.nilai_akhir).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_guru_pamong}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"id_instrumen\": {{id_instrumen_am_pamong}},\n      \"nilai\": 95,\n      \"catatan\": \"Kinerja mengajar di kelas riil dan interaksi dengan siswa sangat baik.\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_am}}/penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_am}}", "penilaian"]
+						}
+					}
+				},
+				{
+					"name": "4.7 Mahasiswa Melihat Rincian Nilai Akhir & Grade Huruf AM",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"Nilai akhir terisi dan grade huruf A\", function () {",
+									"    pm.expect(json.data.nilai_akhir).to.be.above(85);",
+									"    pm.expect(json.data.grade_huruf).to.eql(\"A\");",
+									"});",
+									"pm.test(\"Memiliki 3 item rincian nilai penilai\", function () {",
+									"    pm.expect(json.data.items.length).to.eql(3);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_am}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_am}}/nilai",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_am}}", "nilai"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "token_admin",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_sekolah_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_guru_pamong",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username_guru_pamong",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_dosen_pembimbing_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username_dosen_pembimbing_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_dosen_penguji_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username_dosen_penguji_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username_mhs_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_periode_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_instrumen_am_pembimbing",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_instrumen_am_pamong",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_instrumen_am_penguji",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_mhs_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_pendaftaran_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_dosen_pembimbing_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_dosen_penguji_am",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_guru_pamong",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
