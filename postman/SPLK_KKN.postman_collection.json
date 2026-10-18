@@ -1,0 +1,1455 @@
+{
+	"info": {
+		"_postman_id": "splk-kkn-e2e-collection",
+		"name": "SPLK - Alur Khusus KKN",
+		"description": "Koleksi pengujian Postman end-to-end untuk program Kuliah Kerja Nyata (KKN). Mencakup: setup master desa & kepala desa, pendaftaran multi-mahasiswa, pembentukan kelompok KKN & ketua, penambahan anggota, penetapan pembimbing & kepala desa per kelompok, unggah proker kelompok, transisi otomatis seluruh anggota ke status berjalan, pengisian jurnal desa & logbook, penutupan periode, hingga penilaian paralel oleh Pembimbing, Penguji, dan Kepala Desa.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Setup Master Data KKN (Admin)",
+			"item": [
+				{
+					"name": "1.1 Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_admin\", json.data.token);",
+									"    console.log(\"Token Admin tersimpan!\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"AdminPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "1.2 Buat Tempat Program KKN (Desa)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_desa_kkn\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nama\": \"Desa Wisata Penglipuran\",\n  \"jenis_program\": \"kkn\",\n  \"alamat\": \"Kecamatan Bangli\",\n  \"kota\": \"Bangli\",\n  \"kontak\": \"036691234\",\n  \"is_aktif\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/tempat-program",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "tempat-program"]
+						}
+					}
+				},
+				{
+					"name": "1.3 Buat Akun Kepala Desa (Pembimbing Lapangan KKN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_kepala_desa\", json.data.id);",
+									"    pm.collectionVariables.set(\"username_kades\", json.data.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"kades_kkn_{{$randomInt}}\",\n  \"email\": \"kades_{{$randomInt}}@penglipuran.desa.id\",\n  \"password\": \"KadesPass123!\",\n  \"id_tempat_program\": {{id_desa_kkn}},\n  \"jenis\": \"kepala_desa\",\n  \"nama\": \"I Wayan Kades Adat, S.H.\",\n  \"jabatan\": \"Kepala Desa Penglipuran\",\n  \"kontak\": \"081333444555\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/pembimbing-lapangan",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "pembimbing-lapangan"]
+						}
+					}
+				},
+				{
+					"name": "1.4 Buat Akun Dosen Pembimbing KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_dosen_pembimbing_kkn\", json.data.id);",
+									"    pm.collectionVariables.set(\"username_dosen_pembimbing_kkn\", json.data.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"dosen_kkn_pemb_{{$randomInt}}\",\n  \"email\": \"dos_kkn_pemb_{{$randomInt}}@undiksha.ac.id\",\n  \"password\": \"DosenPass123!\",\n  \"id_prodi\": 1,\n  \"nip\": \"198905{{$randomInt}}\",\n  \"nama\": \"Dr. I Nyoman Pembimbing KKN, M.Si.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/dosen",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "dosen"]
+						}
+					}
+				},
+				{
+					"name": "1.5 Buat Akun Dosen Penguji KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_dosen_penguji_kkn\", json.data.id);",
+									"    pm.collectionVariables.set(\"username_dosen_penguji_kkn\", json.data.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"dosen_kkn_peng_{{$randomInt}}\",\n  \"email\": \"dos_kkn_peng_{{$randomInt}}@undiksha.ac.id\",\n  \"password\": \"DosenPass123!\",\n  \"id_prodi\": 1,\n  \"nip\": \"199006{{$randomInt}}\",\n  \"nama\": \"Dr. Desak Made Penguji KKN, M.Pd.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/dosen",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "dosen"]
+						}
+					}
+				},
+				{
+					"name": "1.6 Buat Akun Mahasiswa 1 (Ketua Kelompok KKN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.username) {",
+									"    pm.collectionVariables.set(\"username_mhs_kkn_1\", json.data.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"mhs_kkn_ketua_{{$randomInt}}\",\n  \"email\": \"mhs_kkn1_{{$randomInt}}@undiksha.ac.id\",\n  \"password\": \"MhsPass123!\",\n  \"id_prodi\": 1,\n  \"nim\": \"221512{{$randomInt}}\",\n  \"nama\": \"Ketua Kelompok KKN\",\n  \"angkatan\": 2022\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/mahasiswa",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "mahasiswa"]
+						}
+					}
+				},
+				{
+					"name": "1.7 Buat Akun Mahasiswa 2 (Anggota Kelompok KKN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.username) {",
+									"    pm.collectionVariables.set(\"username_mhs_kkn_2\", json.data.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"mhs_kkn_anggota_{{$randomInt}}\",\n  \"email\": \"mhs_kkn2_{{$randomInt}}@undiksha.ac.id\",\n  \"password\": \"MhsPass123!\",\n  \"id_prodi\": 1,\n  \"nim\": \"221513{{$randomInt}}\",\n  \"nama\": \"Anggota Kelompok KKN\",\n  \"angkatan\": 2022\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/mahasiswa",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "mahasiswa"]
+						}
+					}
+				},
+				{
+					"name": "1.8 Buat Periode KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_periode_kkn\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nama\": \"Kuliah Kerja Nyata (KKN) Pemberdayaan Desa 2026\",\n  \"jenis_program\": \"kkn\",\n  \"tahun_semester\": \"2026/2027-1\",\n  \"tanggal_mulai\": \"2026-08-01\",\n  \"tanggal_selesai\": \"2026-12-31\",\n  \"tanggal_buka_daftar\": \"2026-01-01\",\n  \"tanggal_tutup_daftar\": \"2026-12-30\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/periode",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "periode"]
+						}
+					}
+				},
+				{
+					"name": "1.9 Aktifkan Periode KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/periode/{{id_periode_kkn}}/aktifkan",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "periode", "{{id_periode_kkn}}", "aktifkan"]
+						}
+					}
+				},
+				{
+					"name": "1.10 Setup Instrumen Nilai Pembimbing KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_instrumen_kkn_pembimbing\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jenis_program\": \"kkn\",\n  \"role_penilai\": \"dosen_pembimbing\",\n  \"nama_aspek\": \"Laporan Program Pengabdian & Keaktifan Kelompok\",\n  \"bobot\": 35\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/instrumen-penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "instrumen-penilaian"]
+						}
+					}
+				},
+				{
+					"name": "1.11 Setup Instrumen Nilai Kepala Desa KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_instrumen_kkn_kades\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jenis_program\": \"kkn\",\n  \"role_penilai\": \"pembimbing_lapangan\",\n  \"nama_aspek\": \"Kinerja Pengabdian Masyarakat & Adaptasi Warga\",\n  \"bobot\": 35\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/instrumen-penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "instrumen-penilaian"]
+						}
+					}
+				},
+				{
+					"name": "1.12 Setup Instrumen Nilai Penguji KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_instrumen_kkn_penguji\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jenis_program\": \"kkn\",\n  \"role_penilai\": \"dosen_penguji\",\n  \"nama_aspek\": \"Ujian Akhir Seminar Hasil Pengabdian Desa\",\n  \"bobot\": 30\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/instrumen-penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "instrumen-penilaian"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Pendaftaran, Pembentukan Kelompok & Transisi Otomatis",
+			"item": [
+				{
+					"name": "2.1 Login Mahasiswa 1 (Ketua)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_mhs_kkn_1\", json.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username_mhs_kkn_1}}\",\n  \"password\": \"MhsPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "2.2 Mahasiswa 1 Mendaftar KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_pendaftaran_kkn_1\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_kkn_1}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_periode\": {{id_periode_kkn}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran"]
+						}
+					}
+				},
+				{
+					"name": "2.3 Login Mahasiswa 2 (Anggota)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_mhs_kkn_2\", json.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username_mhs_kkn_2}}\",\n  \"password\": \"MhsPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "2.4 Mahasiswa 2 Mendaftar KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_pendaftaran_kkn_2\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_kkn_2}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_periode\": {{id_periode_kkn}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran"]
+						}
+					}
+				},
+				{
+					"name": "2.5 Admin Membuat Kelompok KKN & Menetapkan Mhs 1 sebagai Ketua",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.id) {",
+									"    pm.collectionVariables.set(\"id_kelompok_kkn\", json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_periode\": {{id_periode_kkn}},\n  \"id_tempat_program\": {{id_desa_kkn}},\n  \"nama_kelompok\": \"Kelompok KKN 01 Penglipuran Berdaya\",\n  \"id_ketua_peserta\": {{id_pendaftaran_kkn_1}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/kkn/kelompok",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "kkn", "kelompok"]
+						}
+					}
+				},
+				{
+					"name": "2.6 Admin Menambahkan Mhs 2 sebagai Anggota Kelompok",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_peserta_program\": {{id_pendaftaran_kkn_2}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/kkn/kelompok/{{id_kelompok_kkn}}/anggota",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "kkn", "kelompok", "{{id_kelompok_kkn}}", "anggota"]
+						}
+					}
+				},
+				{
+					"name": "2.7 Admin Menetapkan Dosen Pembimbing Kelompok KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_dosen\": {{id_dosen_pembimbing_kkn}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/kkn/kelompok/{{id_kelompok_kkn}}/dosen-pembimbing",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "kkn", "kelompok", "{{id_kelompok_kkn}}", "dosen-pembimbing"]
+						}
+					}
+				},
+				{
+					"name": "2.8 Admin Menetapkan Kepala Desa Kelompok KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_pembimbing_lapangan\": {{id_kepala_desa}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/kkn/kelompok/{{id_kelompok_kkn}}/pembimbing-lapangan",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "kkn", "kelompok", "{{id_kelompok_kkn}}", "pembimbing-lapangan"]
+						}
+					}
+				},
+				{
+					"name": "2.9 Admin Menetapkan Dosen Penguji Mhs 1 & Mhs 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_dosen\": {{id_dosen_penguji_kkn}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/pendaftaran/{{id_pendaftaran_kkn_1}}/dosen-penguji",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "pendaftaran", "{{id_pendaftaran_kkn_1}}", "dosen-penguji"]
+						}
+					}
+				},
+				{
+					"name": "2.10 Mahasiswa Mengunggah Dokumen Proker Kelompok KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_kkn_1}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "jenis_dokumen",
+									"value": "proker",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"description": "Pilih file berkas Program Kerja Kelompok KKN (PDF/DOCX)",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/kkn/kelompok/{{id_kelompok_kkn}}/dokumen",
+							"host": ["{{base_url}}"],
+							"path": ["kkn", "kelompok", "{{id_kelompok_kkn}}", "dokumen"]
+						}
+					}
+				},
+				{
+					"name": "2.11 Cek Kesiapan KKN: Verifikasi Seluruh Anggota Otomatis Berstatus 'berjalan'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"Mahasiswa KKN otomatis bertransisi ke status berjalan!\", function () {",
+									"    pm.expect(json.data.status).to.eql(\"berjalan\");",
+									"});",
+									"pm.test(\"Kesiapan siap = true\", function () {",
+									"    pm.expect(json.data.kesiapan.siap).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_kkn_1}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_kkn_1}}",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_kkn_1}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Pelaksanaan Pengabdian di Desa (Status: Berjalan)",
+			"item": [
+				{
+					"name": "3.1 Mahasiswa Mengisi Jurnal Harian Pengabdian",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_kkn_1}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tanggal\": \"2026-10-18\",\n  \"judul\": \"Sosialisasi Digitalisasi UMKM dan Pengelolaan Sampah Desa\",\n  \"isi\": \"Melaksanakan penyuluhan digital marketing produk kerajinan bambu lokal bersama warga Desa Penglipuran.\",\n  \"kendala\": \"Sebagian pengrajin senior belum terbiasa memakai aplikasi smartphone.\",\n  \"solusi\": \"Didampingi secara personal oleh mahasiswa anggota kelompok secara berpasangan.\",\n  \"status\": \"disubmit\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_kkn_1}}/jurnal",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_kkn_1}}", "jurnal"]
+						}
+					}
+				},
+				{
+					"name": "3.2 Login Dosen Pembimbing KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_dosen_pembimbing_kkn\", json.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username_dosen_pembimbing_kkn}}\",\n  \"password\": \"DosenPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "3.3 Dosen Pembimbing Mengisi Logbook Bimbingan KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_dosen_pembimbing_kkn}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tanggal\": \"2026-10-18\",\n  \"topik_bimbingan\": \"Monitoring Lapangan dan Evaluasi Proker Desa\",\n  \"catatan_perkembangan\": \"Kelompok KKN berhasil menjalin koordinasi yang sangat harmonis dengan perangkat desa dan tokoh adat.\",\n  \"kendala_mahasiswa\": \"Pengadaan sarana tempat sampah terpilah.\",\n  \"solusi_rekomendasi\": \"Manfaatkan dana CSR atau bambu lokal untuk tempat sampah ramah lingkungan.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_kkn_1}}/logbook",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_kkn_1}}", "logbook"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Penutupan Periode & Penilaian Paralel 3 Penilai (KKN)",
+			"item": [
+				{
+					"name": "4.1 Admin Menyelesaikan Periode KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/periode/{{id_periode_kkn}}/selesaikan",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "periode", "{{id_periode_kkn}}", "selesaikan"]
+						}
+					}
+				},
+				{
+					"name": "4.2 Penilai 1: Dosen Pembimbing Memberi Nilai KKN (Skor 90)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_dosen_pembimbing_kkn}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"id_instrumen\": {{id_instrumen_kkn_pembimbing}},\n      \"nilai\": 90,\n      \"catatan\": \"Kekompakan kelompok dan laporan pengabdian tersusun dengan sangat baik.\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_kkn_1}}/penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_kkn_1}}", "penilaian"]
+						}
+					}
+				},
+				{
+					"name": "4.3 Login Dosen Penguji KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_dosen_penguji_kkn\", json.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username_dosen_penguji_kkn}}\",\n  \"password\": \"DosenPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "4.4 Penilai 2: Dosen Penguji Memberi Nilai KKN (Skor 88)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_dosen_penguji_kkn}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"id_instrumen\": {{id_instrumen_kkn_penguji}},\n      \"nilai\": 88,\n      \"catatan\": \"Seminar hasil pengabdian masyarakat dipresentasikan secara lugas.\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_kkn_1}}/penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_kkn_1}}", "penilaian"]
+						}
+					}
+				},
+				{
+					"name": "4.5 Login Kepala Desa (Pembimbing Lapangan KKN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"if (json.data && json.data.token) {",
+									"    pm.collectionVariables.set(\"token_kades\", json.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{username_kades}}\",\n  \"password\": \"KadesPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "4.6 Penilai 3: Kepala Desa Memberi Nilai KKN (Skor 96) -> Trigger Nilai Akhir Otomatis",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"Seluruh instrumen terisi = true\", function () {",
+									"    pm.expect(json.data.semua_instrumen_terisi).to.eql(true);",
+									"});",
+									"pm.test(\"Nilai akhir otomatis terhitung dan tidak null\", function () {",
+									"    pm.expect(json.data.nilai_akhir).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_kades}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"id_instrumen\": {{id_instrumen_kkn_kades}},\n      \"nilai\": 96,\n      \"catatan\": \"Warga desa sangat terbantu dengan program kerja yang direalisasikan mahasiswa.\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_kkn_1}}/penilaian",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_kkn_1}}", "penilaian"]
+						}
+					}
+				},
+				{
+					"name": "4.7 Mahasiswa Melihat Rincian Nilai Akhir & Grade Huruf KKN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"Nilai akhir terisi dan grade huruf A\", function () {",
+									"    pm.expect(json.data.nilai_akhir).to.be.above(85);",
+									"    pm.expect(json.data.grade_huruf).to.eql(\"A\");",
+									"});",
+									"pm.test(\"Memiliki 3 item rincian nilai penilai\", function () {",
+									"    pm.expect(json.data.items.length).to.eql(3);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_mhs_kkn_1}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/pendaftaran/{{id_pendaftaran_kkn_1}}/nilai",
+							"host": ["{{base_url}}"],
+							"path": ["pendaftaran", "{{id_pendaftaran_kkn_1}}", "nilai"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "token_admin",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_desa_kkn",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_kepala_desa",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username_kades",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_dosen_pembimbing_kkn",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username_dosen_pembimbing_kkn",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_dosen_penguji_kkn",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username_dosen_penguji_kkn",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username_mhs_kkn_1",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username_mhs_kkn_2",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_periode_kkn",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_instrumen_kkn_pembimbing",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_instrumen_kkn_kades",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_instrumen_kkn_penguji",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_mhs_kkn_1",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_mhs_kkn_2",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_pendaftaran_kkn_1",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_pendaftaran_kkn_2",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "id_kelompok_kkn",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_dosen_pembimbing_kkn",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_dosen_penguji_kkn",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_kades",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
