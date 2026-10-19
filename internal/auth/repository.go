@@ -31,22 +31,22 @@ func NewRepository() Repository {
 	return &PostgresRepository{}
 }
 
-// FindUserByUsername mencari akun pengguna berdasarkan username.
-func (r *PostgresRepository) FindUserByUsername(ctx context.Context, db database.DBTX, username string) (*User, error) {
+// FindUserByUsername mencari akun pengguna berdasarkan username atau email.
+func (r *PostgresRepository) FindUserByUsername(ctx context.Context, db database.DBTX, identifier string) (*User, error) {
 	query := `
 		SELECT id, username, email, password_hash, is_active, created_at, updated_at
 		FROM users
-		WHERE username = $1
+		WHERE username = $1 OR LOWER(email) = LOWER($1)
 	`
 	var u User
-	err := db.QueryRow(ctx, query, username).Scan(
+	err := db.QueryRow(ctx, query, identifier).Scan(
 		&u.ID, &u.Username, &u.Email, &u.PasswordHash, &u.IsActive, &u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("cari user by username %s: %w", username, err)
+		return nil, fmt.Errorf("cari user by username/email %s: %w", identifier, err)
 	}
 	return &u, nil
 }

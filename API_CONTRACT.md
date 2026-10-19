@@ -147,6 +147,14 @@ Backend menjalankan mesin evaluasi kesiapan (*readiness engine*) otomatis setiap
 - **Endpoint:** `POST /auth/login`
 - **Akses:** Publik (Rate limit: 5 percobaan/menit)
 - **Request Body:**
+*Mendukung identifikasi akun via `email` maupun `username`:*
+```json
+{
+  "email": "budi@undiksha.ac.id",
+  "password": "MhsPassword123!"
+}
+```
+*Atau menggunakan `username`:*
 ```json
 {
   "username": "mhs_budi",

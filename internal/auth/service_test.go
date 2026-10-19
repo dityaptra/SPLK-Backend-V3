@@ -37,9 +37,14 @@ func newFakeRepository() *fakeRepository {
 	}
 }
 
-func (f *fakeRepository) FindUserByUsername(ctx context.Context, db database.DBTX, username string) (*auth.User, error) {
-	if u, ok := f.usersByUsername[username]; ok {
+func (f *fakeRepository) FindUserByUsername(ctx context.Context, db database.DBTX, identifier string) (*auth.User, error) {
+	if u, ok := f.usersByUsername[identifier]; ok {
 		return u, nil
+	}
+	for _, u := range f.usersByUsername {
+		if u.Email == identifier {
+			return u, nil
+		}
 	}
 	return nil, nil
 }
@@ -188,6 +193,22 @@ func TestAuthService(t *testing.T) {
 		// Verifikasi refresh token di hash pada repository
 		tokenHash := security.HashToken(resp.RefreshToken)
 		assert.Contains(t, repo.tokensByHash, tokenHash, "token di repository harus berupa hash")
+
+		// 1b. Kasus Login Sukses menggunakan Email di field Username
+		respEmail, errEmail := svc.Login(ctx, auth.LoginRequest{
+			Username: "aktif@undiksha.ac.id",
+			Password: activePass,
+		}, "127.0.0.1", "curl/7.68.0")
+		require.NoError(t, errEmail)
+		assert.Equal(t, "aktif_user", respEmail.User.Username)
+
+		// 1c. Kasus Login Sukses menggunakan field Email langsung
+		respEmailField, errEmailField := svc.Login(ctx, auth.LoginRequest{
+			Email:    "aktif@undiksha.ac.id",
+			Password: activePass,
+		}, "127.0.0.1", "curl/7.68.0")
+		require.NoError(t, errEmailField)
+		assert.Equal(t, "aktif_user", respEmailField.User.Username)
 
 		// 2. Kasus Password Salah
 		_, errWrongPass := svc.Login(ctx, auth.LoginRequest{

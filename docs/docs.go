@@ -5010,10 +5010,12 @@ const docTemplate = `{
         "auth.LoginRequest": {
             "type": "object",
             "required": [
-                "password",
-                "username"
+                "password"
             ],
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "password": {
                     "type": "string"
                 },

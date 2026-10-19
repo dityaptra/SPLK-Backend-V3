@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -44,20 +45,28 @@ func NewService(repo Repository, pool *pgxpool.Pool, cfg *config.Config, clk clo
 	}
 }
 
-// Login memproses autentikasi pengguna dengan username dan password.
+// Login memproses autentikasi pengguna dengan username atau email dan password.
 // Menerapkan pesan error identik untuk user tidak ditemukan, password salah, atau user non-aktif.
 func (s *authService) Login(ctx context.Context, req LoginRequest, ip, userAgent string) (*LoginResponse, error) {
-	// Ambil akun berdasarkan username
-	u, err := s.repo.FindUserByUsername(ctx, s.pool, req.Username)
+	identifier := strings.TrimSpace(req.Username)
+	if identifier == "" {
+		identifier = strings.TrimSpace(req.Email)
+	}
+	if identifier == "" {
+		return nil, httpx.BadRequest("IDENTIFIER_WAJIB", "username atau email wajib diisi")
+	}
+
+	// Ambil akun berdasarkan username atau email
+	u, err := s.repo.FindUserByUsername(ctx, s.pool, identifier)
 	if err != nil {
 		return nil, fmt.Errorf("cari user login: %w", err)
 	}
 
-	// 1. Username tidak ditemukan
+	// 1. Akun tidak ditemukan
 	if u == nil {
-		// RULES.md bagian 7 nomor 3: login gagal untuk username tak dikenal tidak masuk log_aktivitas,
+		// RULES.md bagian 7 nomor 3: login gagal untuk akun tak dikenal tidak masuk log_aktivitas,
 		// cukup dicatat ke slog tanpa menyertakan password.
-		slog.WarnContext(ctx, "login gagal: username tidak dikenal", "username", req.Username, "ip", ip)
+		slog.WarnContext(ctx, "login gagal: akun tidak dikenal", "identifier", identifier, "ip", ip)
 		return nil, httpx.Unauthorized("KREDENSIAL_TIDAK_VALID", "username atau password salah")
 	}
 

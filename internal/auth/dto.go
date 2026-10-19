@@ -1,8 +1,10 @@
 package auth
 
 // LoginRequest adalah DTO request untuk POST /auth/login.
+// Mendukung identifikasi login menggunakan username maupun email.
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
+	Username string `json:"username,omitempty"`
+	Email    string `json:"email,omitempty"`
 	Password string `json:"password" binding:"required"`
 }
 
