@@ -5125,6 +5125,514 @@
                 }
             }
         },
+        "/spd": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Melihat daftar SPD. Admin dan Pegawai melihat seluruh data; Dosen melihat SPD tugasnya; Mahasiswa melihat SPD kegiatannya.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Surat Perjalanan Dinas"
+                ],
+                "summary": "Daftar Surat Perjalanan Dinas",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Filter ID Dosen",
+                        "name": "id_dosen",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter ID Peserta Program",
+                        "name": "id_peserta_program",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pencarian tujuan/nama dosen/nama mahasiswa",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Nomor halaman (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Jumlah data per halaman (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.ListResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/spd.SPDResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Pegawai atau admin membuat surat perjalanan dinas untuk dosen dan peserta program.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Surat Perjalanan Dinas"
+                ],
+                "summary": "Buat Surat Perjalanan Dinas (Pegawai/Admin)",
+                "parameters": [
+                    {
+                        "description": "Data SPD",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/spd.CreateSPDRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SingleResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/spd.SPDResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/spd/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil detail satu SPD. Terbuka untuk Pegawai, Admin, Dosen terkait, dan Mahasiswa terkait.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Surat Perjalanan Dinas"
+                ],
+                "summary": "Ambil detail Surat Perjalanan Dinas",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID SPD",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SingleResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/spd.SPDResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Pegawai atau admin memperbarui data surat perjalanan dinas.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Surat Perjalanan Dinas"
+                ],
+                "summary": "Perbarui Surat Perjalanan Dinas (Pegawai/Admin)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID SPD",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data perubahan SPD",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/spd.UpdateSPDRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SingleResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/spd.SPDResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Pegawai atau admin menghapus surat perjalanan dinas dan berkas fisiknya.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Surat Perjalanan Dinas"
+                ],
+                "summary": "Hapus Surat Perjalanan Dinas (Pegawai/Admin)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID SPD",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SingleResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/spd/{id}/download": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "Surat Perjalanan Dinas"
+                ],
+                "summary": "Unduh berkas fisik Surat Perjalanan Dinas",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID SPD",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/spd/{id}/file": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Surat Perjalanan Dinas"
+                ],
+                "summary": "Unggah berkas fisik Surat Perjalanan Dinas (PDF/Docx/Gambar)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID SPD",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File dokumen SPD (maks 10MB)",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SingleResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/spd.SPDResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/tempat-program": {
             "get": {
                 "security": [
@@ -6664,6 +7172,116 @@
                 },
                 "tanggal_tutup_daftar": {
                     "type": "string"
+                }
+            }
+        },
+        "spd.CreateSPDRequest": {
+            "type": "object",
+            "required": [
+                "id_dosen",
+                "id_peserta_program",
+                "tanggal_berangkat",
+                "tanggal_kembali",
+                "tujuan"
+            ],
+            "properties": {
+                "id_dosen": {
+                    "type": "integer"
+                },
+                "id_peserta_program": {
+                    "type": "integer"
+                },
+                "tanggal_berangkat": {
+                    "description": "Format: YYYY-MM-DD",
+                    "type": "string"
+                },
+                "tanggal_kembali": {
+                    "description": "Format: YYYY-MM-DD",
+                    "type": "string"
+                },
+                "tujuan": {
+                    "type": "string",
+                    "maxLength": 150
+                }
+            }
+        },
+        "spd.SPDResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "dibuat_oleh": {
+                    "type": "integer"
+                },
+                "file_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "id_dosen": {
+                    "type": "integer"
+                },
+                "id_peserta_program": {
+                    "type": "integer"
+                },
+                "jenis_program": {
+                    "type": "string"
+                },
+                "nama_dosen": {
+                    "type": "string"
+                },
+                "nama_mahasiswa": {
+                    "type": "string"
+                },
+                "nama_pegawai": {
+                    "type": "string"
+                },
+                "nim_mahasiswa": {
+                    "type": "string"
+                },
+                "nip_dosen": {
+                    "type": "string"
+                },
+                "tanggal_berangkat": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "tanggal_kembali": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "tujuan": {
+                    "type": "string"
+                }
+            }
+        },
+        "spd.UpdateSPDRequest": {
+            "type": "object",
+            "required": [
+                "id_dosen",
+                "id_peserta_program",
+                "tanggal_berangkat",
+                "tanggal_kembali",
+                "tujuan"
+            ],
+            "properties": {
+                "id_dosen": {
+                    "type": "integer"
+                },
+                "id_peserta_program": {
+                    "type": "integer"
+                },
+                "tanggal_berangkat": {
+                    "type": "string"
+                },
+                "tanggal_kembali": {
+                    "type": "string"
+                },
+                "tujuan": {
+                    "type": "string",
+                    "maxLength": 150
                 }
             }
         },

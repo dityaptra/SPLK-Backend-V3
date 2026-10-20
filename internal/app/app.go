@@ -25,6 +25,7 @@ import (
 	"splk-backend/internal/periode"
 	"splk-backend/internal/platform/clock"
 	"splk-backend/internal/platform/storage"
+	"splk-backend/internal/spd"
 	"splk-backend/internal/tempat"
 	"splk-backend/internal/user"
 
@@ -122,10 +123,14 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	pengumumanRepo := pengumuman.NewRepository()
 	pengumumanSvc := pengumuman.NewService(pengumumanRepo, pool, actLogger)
 	pengumumanHandler := pengumuman.NewHandler(pengumumanSvc)
+	spdRepo := spd.NewRepository()
+	spdSvc := spd.NewService(spdRepo, pool, st, actLogger, cfg)
+	spdHandler := spd.NewHandler(spdSvc, cfg)
 
 	// 7. Middleware Keamanan
 	authMiddleware := middleware.Auth(cfg.JWTSecret)
 	adminRoleMiddleware := middleware.RequireRoles("admin")
+	pegawaiOrAdminMiddleware := middleware.RequireRoles("admin", "pegawai")
 	loginLimit := 5
 	if cfg.AppEnv == "testing" || cfg.AppEnv == "test" || gin.Mode() == gin.TestMode || os.Getenv("TEST_DATABASE_URL") != "" {
 		loginLimit = 100
@@ -165,6 +170,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			logbook.RegisterRoutes(authGroupGeneral, logbookHandler)
 			penilaian.RegisterRoutes(authGroupGeneral, penilaianHandler)
 			pengumuman.RegisterRoutes(nil, authGroupGeneral, pengumumanHandler)
+			spd.RegisterRoutes(authGroupGeneral, spdHandler, pegawaiOrAdminMiddleware)
 		}
 	}
 
@@ -200,6 +206,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			logbook.RegisterRoutes(authDirectGeneral, logbookHandler)
 			penilaian.RegisterRoutes(authDirectGeneral, penilaianHandler)
 			pengumuman.RegisterRoutes(nil, authDirectGeneral, pengumumanHandler)
+			spd.RegisterRoutes(authDirectGeneral, spdHandler, pegawaiOrAdminMiddleware)
 		}
 	}
 

@@ -541,6 +541,76 @@ Fitur pengumuman memungkinkan admin mempublikasikan informasi penting secara ter
 
 ---
 
+### G. Modul Surat Perjalanan Dinas (SPD)
+
+Surat Perjalanan Dinas dibuat oleh pegawai (atau admin yang memiliki profil pegawai) untuk menugaskan dosen pembimbing/penguji melakukan supervisi atau monitoring ke lokasi tempat magang/sekolah/desa peserta.
+
+#### 1. Buat SPD Baru (Pegawai/Admin)
+- **Endpoint:** `POST /spd`
+- **Headers:** `Authorization: Bearer <TOKEN_PEGAWAI_ATAU_ADMIN>`
+- **Request Body:**
+```json
+{
+  "id_dosen": 3,
+  "id_peserta_program": 12,
+  "tujuan": "Supervisi dan Monitoring Magang Industri di PT Telkom Denpasar",
+  "tanggal_berangkat": "2026-11-10",
+  "tanggal_kembali": "2026-11-12"
+}
+```
+- **Response 201 Created:**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 1,
+    "id_dosen": 3,
+    "nama_dosen": "Dr. Ir. I Ketut Resika Arthana, S.T., M.Kom.",
+    "nip_dosen": "198501556",
+    "id_peserta_program": 12,
+    "nama_mahasiswa": "Gede Raditya",
+    "nim_mahasiswa": "2215101001",
+    "jenis_program": "magang",
+    "tujuan": "Supervisi dan Monitoring Magang Industri di PT Telkom Denpasar",
+    "tanggal_berangkat": "2026-11-10",
+    "tanggal_kembali": "2026-11-12",
+    "file_url": null,
+    "dibuat_oleh": 1,
+    "nama_pegawai": "Ketua Jurusan TI",
+    "created_at": "2026-10-20T10:00:00Z"
+  }
+}
+```
+
+#### 2. Unggah Berkas Fisik / Surat Tugas Ditandatangani (Pegawai/Admin)
+- **Endpoint:** `POST /spd/:id/file`
+- **Headers:**
+  - `Authorization: Bearer <TOKEN_PEGAWAI_ATAU_ADMIN>`
+  - `Content-Type: multipart/form-data`
+- **Form Data:**
+  - `file`: `(Binary file, PDF/DOCX/PNG/JPG maks 10MB)`
+- **Response 200 OK:** Mengembalikan objek data SPD dengan field `file_url` yang telah terisi path berkas.
+
+#### 3. Unduh Berkas Fisik SPD
+- **Endpoint:** `GET /spd/:id/download`
+- **Headers:** `Authorization: Bearer <TOKEN>`
+- **Hak Akses:** Pegawai, Admin, Dosen penerima SPD, dan Mahasiswa yang tertera pada kegiatan SPD.
+- **Response 200 OK:** Binary stream berkas fisik dengan header `Content-Disposition: attachment; filename="SPD_1_...pdf"`.
+
+#### 4. Daftar Surat Perjalanan Dinas
+- **Endpoint:** `GET /spd?page=1&limit=20&search=Denpasar`
+- **Headers:** `Authorization: Bearer <TOKEN>`
+- **Behavior:**
+  - **Pegawai & Admin:** Melihat seluruh daftar SPD (dapat difilter dengan query `?id_dosen=3` atau `?id_peserta_program=12`).
+  - **Dosen:** Otomatis difilter hanya menampilkan SPD di mana dosen tersebut bertugas.
+  - **Mahasiswa:** Otomatis difilter hanya menampilkan SPD yang menugaskan dosen untuk mendampingi dirinya.
+
+#### 5. Perbarui dan Hapus SPD (Pegawai/Admin)
+- `PUT /spd/:id`: Memperbarui data tujuan, dosen, peserta, atau rentang tanggal.
+- `DELETE /spd/:id`: Menghapus data SPD beserta berkas fisik terkait di penyimpanan.
+
+---
+
 ## 5. Pengunggahan Dokumen (Multipart/Form-Data)
 
 ### Aturan File

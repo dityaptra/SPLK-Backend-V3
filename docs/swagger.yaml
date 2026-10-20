@@ -944,6 +944,83 @@ definitions:
     - tanggal_mulai
     - tanggal_selesai
     type: object
+  spd.CreateSPDRequest:
+    properties:
+      id_dosen:
+        type: integer
+      id_peserta_program:
+        type: integer
+      tanggal_berangkat:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      tanggal_kembali:
+        description: 'Format: YYYY-MM-DD'
+        type: string
+      tujuan:
+        maxLength: 150
+        type: string
+    required:
+    - id_dosen
+    - id_peserta_program
+    - tanggal_berangkat
+    - tanggal_kembali
+    - tujuan
+    type: object
+  spd.SPDResponse:
+    properties:
+      created_at:
+        type: string
+      dibuat_oleh:
+        type: integer
+      file_url:
+        type: string
+      id:
+        type: integer
+      id_dosen:
+        type: integer
+      id_peserta_program:
+        type: integer
+      jenis_program:
+        type: string
+      nama_dosen:
+        type: string
+      nama_mahasiswa:
+        type: string
+      nama_pegawai:
+        type: string
+      nim_mahasiswa:
+        type: string
+      nip_dosen:
+        type: string
+      tanggal_berangkat:
+        description: YYYY-MM-DD
+        type: string
+      tanggal_kembali:
+        description: YYYY-MM-DD
+        type: string
+      tujuan:
+        type: string
+    type: object
+  spd.UpdateSPDRequest:
+    properties:
+      id_dosen:
+        type: integer
+      id_peserta_program:
+        type: integer
+      tanggal_berangkat:
+        type: string
+      tanggal_kembali:
+        type: string
+      tujuan:
+        maxLength: 150
+        type: string
+    required:
+    - id_dosen
+    - id_peserta_program
+    - tanggal_berangkat
+    - tanggal_kembali
+    - tujuan
+    type: object
   tempat.CreateTempatRequest:
     properties:
       alamat:
@@ -4645,6 +4722,319 @@ paths:
       summary: Detail program studi
       tags:
       - Akademik
+  /spd:
+    get:
+      description: Melihat daftar SPD. Admin dan Pegawai melihat seluruh data; Dosen
+        melihat SPD tugasnya; Mahasiswa melihat SPD kegiatannya.
+      parameters:
+      - description: Filter ID Dosen
+        in: query
+        name: id_dosen
+        type: integer
+      - description: Filter ID Peserta Program
+        in: query
+        name: id_peserta_program
+        type: integer
+      - description: Pencarian tujuan/nama dosen/nama mahasiswa
+        in: query
+        name: search
+        type: string
+      - description: 'Nomor halaman (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah data per halaman (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.ListResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/spd.SPDResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Daftar Surat Perjalanan Dinas
+      tags:
+      - Surat Perjalanan Dinas
+    post:
+      consumes:
+      - application/json
+      description: Pegawai atau admin membuat surat perjalanan dinas untuk dosen dan
+        peserta program.
+      parameters:
+      - description: Data SPD
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/spd.CreateSPDRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.SingleResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/spd.SPDResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Buat Surat Perjalanan Dinas (Pegawai/Admin)
+      tags:
+      - Surat Perjalanan Dinas
+  /spd/{id}:
+    delete:
+      description: Pegawai atau admin menghapus surat perjalanan dinas dan berkas
+        fisiknya.
+      parameters:
+      - description: ID SPD
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.SingleResponse'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Hapus Surat Perjalanan Dinas (Pegawai/Admin)
+      tags:
+      - Surat Perjalanan Dinas
+    get:
+      description: Mengambil detail satu SPD. Terbuka untuk Pegawai, Admin, Dosen
+        terkait, dan Mahasiswa terkait.
+      parameters:
+      - description: ID SPD
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.SingleResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/spd.SPDResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Ambil detail Surat Perjalanan Dinas
+      tags:
+      - Surat Perjalanan Dinas
+    put:
+      consumes:
+      - application/json
+      description: Pegawai atau admin memperbarui data surat perjalanan dinas.
+      parameters:
+      - description: ID SPD
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data perubahan SPD
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/spd.UpdateSPDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.SingleResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/spd.SPDResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui Surat Perjalanan Dinas (Pegawai/Admin)
+      tags:
+      - Surat Perjalanan Dinas
+  /spd/{id}/download:
+    get:
+      parameters:
+      - description: ID SPD
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Unduh berkas fisik Surat Perjalanan Dinas
+      tags:
+      - Surat Perjalanan Dinas
+  /spd/{id}/file:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: ID SPD
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: File dokumen SPD (maks 10MB)
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.SingleResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/spd.SPDResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Unggah berkas fisik Surat Perjalanan Dinas (PDF/Docx/Gambar)
+      tags:
+      - Surat Perjalanan Dinas
   /tempat-program:
     get:
       parameters:
