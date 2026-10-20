@@ -463,6 +463,84 @@ Pembimbing lapangan menggunakan alur penilaian yang sama persis dengan dosen:
 
 ---
 
+### F. Modul Pengumuman (Admin & Pengguna Login)
+
+Fitur pengumuman memungkinkan admin mempublikasikan informasi penting secara terbuka (semua pengguna) atau ditargetkan khusus ke role tertentu (`mahasiswa`, `dosen`, `pegawai`, dll.).
+
+#### 1. Buat Pengumuman Baru (Khusus Admin)
+- **Endpoint:** `POST /admin/pengumuman`
+- **Headers:** `Authorization: Bearer <TOKEN_ADMIN>`
+- **Request Body:**
+```json
+{
+  "judul": "Batas Akhir Pengumpulan Berkas Magang",
+  "isi": "Diberitahukan kepada seluruh mahasiswa peserta magang agar segera mengunggah MoU dan proposal sebelum tanggal 25.",
+  "target_role": "mahasiswa"
+}
+```
+*(Catatan: Jika `target_role` bernilai `null` atau dikosongkan, pengumuman akan tampil untuk semua pengguna).*
+
+#### 2. Perbarui Pengumuman (Khusus Admin)
+- **Endpoint:** `PUT /admin/pengumuman/:id`
+- **Headers:** `Authorization: Bearer <TOKEN_ADMIN>`
+- **Request Body:**
+```json
+{
+  "judul": "Judul Baru Pengumuman",
+  "isi": "Konten pembaruan isi pengumuman.",
+  "target_role": null
+}
+```
+
+#### 3. Hapus Pengumuman (Khusus Admin)
+- **Endpoint:** `DELETE /admin/pengumuman/:id`
+- **Headers:** `Authorization: Bearer <TOKEN_ADMIN>`
+- **Response 200 OK:**
+```json
+{
+  "status": "success",
+  "data": {
+    "message": "pengumuman berhasil dihapus"
+  }
+}
+```
+
+#### 4. Mengambil Daftar Pengumuman (Pengguna Login: Mahasiswa, Dosen, Pegawai, dll.)
+- **Endpoint:** `GET /pengumuman?page=1&limit=20&search=magang`
+- **Headers:** `Authorization: Bearer <TOKEN_USER>`
+- **Behavior:** Backend secara otomatis memfilter pengumuman yang relevan:
+  - Pengumuman publik (`target_role` bernilai `null` / kosong).
+  - Pengumuman yang ditargetkan spesifik ke salah satu peran user yang sedang login.
+- **Response 200 OK:**
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "judul": "Batas Akhir Pengumpulan Berkas Magang",
+      "isi": "Diberitahukan kepada seluruh mahasiswa...",
+      "dibuat_oleh": 1,
+      "nama_pembuat": "admin_utama",
+      "tanggal_terbit": "2026-10-20T09:50:00Z",
+      "target_role": "mahasiswa"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 1
+  }
+}
+```
+
+#### 5. Mengambil Detail Satu Pengumuman
+- **Endpoint:** `GET /pengumuman/:id`
+- **Headers:** `Authorization: Bearer <TOKEN_USER>`
+- *(Mengembalikan HTTP 404 jika pengumuman ditargetkan untuk peran lain di luar peran pengguna).*
+
+---
+
 ## 5. Pengunggahan Dokumen (Multipart/Form-Data)
 
 ### Aturan File

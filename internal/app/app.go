@@ -20,6 +20,7 @@ import (
 	"splk-backend/internal/logbook"
 	"splk-backend/internal/middleware"
 	"splk-backend/internal/pendaftaran"
+	"splk-backend/internal/pengumuman"
 	"splk-backend/internal/penilaian"
 	"splk-backend/internal/periode"
 	"splk-backend/internal/platform/clock"
@@ -118,6 +119,9 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 	jurnalHandler := jurnal.NewHandler(jurnalSvc)
 	logbookHandler := logbook.NewHandler(logbookSvc)
 	penilaianHandler := penilaian.NewHandler(penilaianSvc)
+	pengumumanRepo := pengumuman.NewRepository()
+	pengumumanSvc := pengumuman.NewService(pengumumanRepo, pool, actLogger)
+	pengumumanHandler := pengumuman.NewHandler(pengumumanSvc)
 
 	// 7. Middleware Keamanan
 	authMiddleware := middleware.Auth(cfg.JWTSecret)
@@ -145,6 +149,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			pendaftaran.RegisterRoutes(adminGroup, nil, pendaftaranHandler)
 			kkn.RegisterRoutes(adminGroup, nil, kknHandler)
 			penilaian.RegisterAdminRoutes(adminGroup, penilaianHandler)
+			pengumuman.RegisterRoutes(adminGroup, nil, pengumumanHandler)
 		}
 
 		// Rute Terautentikasi /api/v1/ (Akademik, Tempat, Periode, Pendaftaran, Dokumen, KKN, Jurnal, Logbook, & Penilaian)
@@ -159,6 +164,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			jurnal.RegisterRoutes(authGroupGeneral, jurnalHandler)
 			logbook.RegisterRoutes(authGroupGeneral, logbookHandler)
 			penilaian.RegisterRoutes(authGroupGeneral, penilaianHandler)
+			pengumuman.RegisterRoutes(nil, authGroupGeneral, pengumumanHandler)
 		}
 	}
 
@@ -178,6 +184,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			pendaftaran.RegisterRoutes(adminDirect, nil, pendaftaranHandler)
 			kkn.RegisterRoutes(adminDirect, nil, kknHandler)
 			penilaian.RegisterAdminRoutes(adminDirect, penilaianHandler)
+			pengumuman.RegisterRoutes(adminDirect, nil, pengumumanHandler)
 		}
 
 		// /tempat-program, /periode, /pendaftaran, /dokumen, /fakultas, /jurusan, /program-studi, /kkn, /jurnal, /logbook, /penilaian langsung
@@ -192,6 +199,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool, logger *slog.Logger) *gin
 			jurnal.RegisterRoutes(authDirectGeneral, jurnalHandler)
 			logbook.RegisterRoutes(authDirectGeneral, logbookHandler)
 			penilaian.RegisterRoutes(authDirectGeneral, penilaianHandler)
+			pengumuman.RegisterRoutes(nil, authDirectGeneral, pengumumanHandler)
 		}
 	}
 

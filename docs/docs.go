@@ -2233,6 +2233,304 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/pengumuman": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin melihat seluruh daftar pengumuman sistem dengan filter target role dan pencarian teks.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumuman"
+                ],
+                "summary": "Daftar seluruh pengumuman (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter target role",
+                        "name": "target_role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pencarian judul atau isi",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Nomor halaman (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Jumlah data per halaman (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.ListResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/pengumuman.PengumumanResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin membuat pengumuman baru yang dapat ditargetkan ke peran tertentu atau semua pengguna.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumuman"
+                ],
+                "summary": "Buat pengumuman baru (Admin)",
+                "parameters": [
+                    {
+                        "description": "Data pengumuman",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pengumuman.CreatePengumumanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SingleResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/pengumuman.PengumumanResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/pengumuman/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin memperbarui judul, isi, atau target peran pengumuman.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumuman"
+                ],
+                "summary": "Perbarui pengumuman (Admin)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID Pengumuman",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data perubahan pengumuman",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pengumuman.UpdatePengumumanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SingleResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/pengumuman.PengumumanResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Admin menghapus pengumuman berdasarkan ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumuman"
+                ],
+                "summary": "Hapus pengumuman (Admin)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID Pengumuman",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SingleResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/periode": {
             "post": {
                 "security": [
@@ -4539,6 +4837,136 @@ const docTemplate = `{
                 }
             }
         },
+        "/pengumuman": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Pengguna melihat daftar pengumuman yang relevan dengan perannya (termasuk pengumuman umum/publik).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumuman"
+                ],
+                "summary": "Daftar pengumuman relevan (Pengguna Login)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pencarian judul atau isi",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Nomor halaman (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Jumlah data per halaman (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.ListResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/pengumuman.PengumumanResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/pengumuman/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil detail satu pengumuman. Pengguna biasa hanya dapat mengakses jika target_role sesuai atau terbuka untuk semua.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pengumuman"
+                ],
+                "summary": "Ambil detail pengumuman",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID Pengumuman",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.SingleResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/pengumuman.PengumumanResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/periode": {
             "get": {
                 "security": [
@@ -5218,6 +5646,12 @@ const docTemplate = `{
                 }
             }
         },
+        "httpx.SingleResponse": {
+            "type": "object",
+            "properties": {
+                "data": {}
+            }
+        },
         "jurnal.CreateJurnalRequest": {
             "type": "object",
             "required": [
@@ -5774,6 +6208,71 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "nama": {
+                    "type": "string"
+                }
+            }
+        },
+        "pengumuman.CreatePengumumanRequest": {
+            "type": "object",
+            "required": [
+                "isi",
+                "judul"
+            ],
+            "properties": {
+                "isi": {
+                    "type": "string"
+                },
+                "judul": {
+                    "type": "string",
+                    "maxLength": 150
+                },
+                "target_role": {
+                    "description": "Jika null/kosong, berarti untuk semua role",
+                    "type": "string"
+                }
+            }
+        },
+        "pengumuman.PengumumanResponse": {
+            "type": "object",
+            "properties": {
+                "dibuat_oleh": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isi": {
+                    "type": "string"
+                },
+                "judul": {
+                    "type": "string"
+                },
+                "nama_pembuat": {
+                    "type": "string"
+                },
+                "tanggal_terbit": {
+                    "type": "string"
+                },
+                "target_role": {
+                    "type": "string"
+                }
+            }
+        },
+        "pengumuman.UpdatePengumumanRequest": {
+            "type": "object",
+            "required": [
+                "isi",
+                "judul"
+            ],
+            "properties": {
+                "isi": {
+                    "type": "string"
+                },
+                "judul": {
+                    "type": "string",
+                    "maxLength": 150
+                },
+                "target_role": {
                     "type": "string"
                 }
             }

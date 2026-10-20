@@ -258,6 +258,10 @@ definitions:
       total:
         type: integer
     type: object
+  httpx.SingleResponse:
+    properties:
+      data: {}
+    type: object
   jurnal.CreateJurnalRequest:
     properties:
       isi:
@@ -629,6 +633,50 @@ definitions:
         type: string
       nama:
         type: string
+    type: object
+  pengumuman.CreatePengumumanRequest:
+    properties:
+      isi:
+        type: string
+      judul:
+        maxLength: 150
+        type: string
+      target_role:
+        description: Jika null/kosong, berarti untuk semua role
+        type: string
+    required:
+    - isi
+    - judul
+    type: object
+  pengumuman.PengumumanResponse:
+    properties:
+      dibuat_oleh:
+        type: integer
+      id:
+        type: integer
+      isi:
+        type: string
+      judul:
+        type: string
+      nama_pembuat:
+        type: string
+      tanggal_terbit:
+        type: string
+      target_role:
+        type: string
+    type: object
+  pengumuman.UpdatePengumumanRequest:
+    properties:
+      isi:
+        type: string
+      judul:
+        maxLength: 150
+        type: string
+      target_role:
+        type: string
+    required:
+    - isi
+    - judul
     type: object
   penilaian.CreateInstrumenRequest:
     properties:
@@ -2781,6 +2829,188 @@ paths:
       summary: Pemetaan sekolah penempatan dan guru pamong AM oleh admin
       tags:
       - Pendaftaran
+  /admin/pengumuman:
+    get:
+      description: Admin melihat seluruh daftar pengumuman sistem dengan filter target
+        role dan pencarian teks.
+      parameters:
+      - description: Filter target role
+        in: query
+        name: target_role
+        type: string
+      - description: Pencarian judul atau isi
+        in: query
+        name: search
+        type: string
+      - description: 'Nomor halaman (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah data per halaman (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.ListResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/pengumuman.PengumumanResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Daftar seluruh pengumuman (Admin)
+      tags:
+      - Pengumuman
+    post:
+      consumes:
+      - application/json
+      description: Admin membuat pengumuman baru yang dapat ditargetkan ke peran tertentu
+        atau semua pengguna.
+      parameters:
+      - description: Data pengumuman
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pengumuman.CreatePengumumanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.SingleResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/pengumuman.PengumumanResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Buat pengumuman baru (Admin)
+      tags:
+      - Pengumuman
+  /admin/pengumuman/{id}:
+    delete:
+      description: Admin menghapus pengumuman berdasarkan ID.
+      parameters:
+      - description: ID Pengumuman
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.SingleResponse'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Hapus pengumuman (Admin)
+      tags:
+      - Pengumuman
+    put:
+      consumes:
+      - application/json
+      description: Admin memperbarui judul, isi, atau target peran pengumuman.
+      parameters:
+      - description: ID Pengumuman
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data perubahan pengumuman
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pengumuman.UpdatePengumumanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.SingleResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/pengumuman.PengumumanResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Perbarui pengumuman (Admin)
+      tags:
+      - Pengumuman
   /admin/periode:
     post:
       consumes:
@@ -4235,6 +4465,85 @@ paths:
       summary: Kirim penilaian peserta (penilai sah)
       tags:
       - Penilaian
+  /pengumuman:
+    get:
+      description: Pengguna melihat daftar pengumuman yang relevan dengan perannya
+        (termasuk pengumuman umum/publik).
+      parameters:
+      - description: Pencarian judul atau isi
+        in: query
+        name: search
+        type: string
+      - description: 'Nomor halaman (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah data per halaman (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.ListResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/pengumuman.PengumumanResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Daftar pengumuman relevan (Pengguna Login)
+      tags:
+      - Pengumuman
+  /pengumuman/{id}:
+    get:
+      description: Mengambil detail satu pengumuman. Pengguna biasa hanya dapat mengakses
+        jika target_role sesuai atau terbuka untuk semua.
+      parameters:
+      - description: ID Pengumuman
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.SingleResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/pengumuman.PengumumanResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Ambil detail pengumuman
+      tags:
+      - Pengumuman
   /periode:
     get:
       parameters:
