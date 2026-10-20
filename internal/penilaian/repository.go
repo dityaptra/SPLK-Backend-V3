@@ -27,6 +27,11 @@ type Repository interface {
 	GetNilaiDetailByPeserta(ctx context.Context, db database.DBTX, idPeserta int) ([]NilaiDetail, error)
 	UpsertPenilaian(ctx context.Context, tx pgx.Tx, p *Penilaian) error
 	UpdateNilaiAkhir(ctx context.Context, tx pgx.Tx, idPeserta int, nilaiAkhir float64, gradeHuruf string) error
+
+	// Kelulusan Penguji (Magang)
+	GetKelulusanPengujiByPeserta(ctx context.Context, db database.DBTX, idPeserta int) (*KelulusanPenguji, error)
+	UpsertKelulusanPenguji(ctx context.Context, db database.DBTX, k *KelulusanPenguji) error
+	GetMahasiswaDanPengujiInfo(ctx context.Context, db database.DBTX, idPeserta int) (nim, namaMhs string, idDosen *int, namaDosen *string, err error)
 }
 
 type repository struct{}
@@ -355,3 +360,60 @@ func (r *repository) UpdateNilaiAkhir(ctx context.Context, tx pgx.Tx, idPeserta 
 	_, err := tx.Exec(ctx, query, nilaiAkhir, gradeHuruf, idPeserta)
 	return err
 }
+
+func (r *repository) GetKelulusanPengujiByPeserta(ctx context.Context, db database.DBTX, idPeserta int) (*KelulusanPenguji, error) {
+	query := `
+		SELECT id, id_peserta_program, id_dosen_penguji, status_kelulusan, COALESCE(catatan, ''), created_at, updated_at
+		FROM kelulusan_penguji
+		WHERE id_peserta_program = $1
+	`
+	var k KelulusanPenguji
+	err := db.QueryRow(ctx, query, idPeserta).Scan(
+		&k.ID, &k.IDPesertaProgram, &k.IDDosenPenguji, &k.StatusKelulusan, &k.Catatan, &k.CreatedAt, &k.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &k, nil
+}
+
+func (r *repository) UpsertKelulusanPenguji(ctx context.Context, db database.DBTX, k *KelulusanPenguji) error {
+	query := `
+		INSERT INTO kelulusan_penguji (id_peserta_program, id_dosen_penguji, status_kelulusan, catatan, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		ON CONFLICT (id_peserta_program)
+		DO UPDATE SET id_dosen_penguji = EXCLUDED.id_dosen_penguji,
+		              status_kelulusan = EXCLUDED.status_kelulusan,
+		              catatan = EXCLUDED.catatan,
+		              updated_at = CURRENT_TIMESTAMP
+		RETURNING id, created_at, updated_at
+	`
+	return db.QueryRow(ctx, query, k.IDPesertaProgram, k.IDDosenPenguji, k.StatusKelulusan, k.Catatan).Scan(
+		&k.ID, &k.CreatedAt, &k.UpdatedAt,
+	)
+}
+
+func (r *repository) GetMahasiswaDanPengujiInfo(ctx context.Context, db database.DBTX, idPeserta int) (nim, namaMhs string, idDosen *int, namaDosen *string, err error) {
+	query := `
+		SELECT 
+			m.nim, 
+			u.nama, 
+			pp.id_dosen_penguji, 
+			ud.nama
+		FROM peserta_program pp
+		JOIN mahasiswa m ON pp.id_mahasiswa = m.id
+		JOIN users u ON m.id_user = u.id
+		LEFT JOIN dosen d ON pp.id_dosen_penguji = d.id
+		LEFT JOIN users ud ON d.id_user = ud.id
+		WHERE pp.id = $1
+	`
+	err = db.QueryRow(ctx, query, idPeserta).Scan(&nim, &namaMhs, &idDosen, &namaDosen)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", "", nil, nil, nil
+	}
+	return nim, namaMhs, idDosen, namaDosen, err
+}
+

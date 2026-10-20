@@ -34,6 +34,10 @@ type Service interface {
 	SubmitPenilaian(ctx context.Context, actor middleware.Actor, idPendaftaran int, req SubmitPenilaianRequest, ip, ua string) (*SubmitPenilaianResponse, error)
 	GetNilai(ctx context.Context, actor middleware.Actor, idPendaftaran int) (*RincianNilaiResponse, error)
 	HitungNilaiManual(ctx context.Context, actor middleware.Actor, idPendaftaran int, ip, ua string) (*HitungNilaiManualResponse, error)
+
+	// Verifikasi Kelulusan Penguji (Magang)
+	GetVerifikasiPenguji(ctx context.Context, actor middleware.Actor, idPendaftaran int) (*VerifikasiPengujiResponse, error)
+	SubmitVerifikasiPenguji(ctx context.Context, actor middleware.Actor, idPendaftaran int, req SubmitVerifikasiPengujiRequest, ip, ua string) (*VerifikasiPengujiResponse, error)
 }
 
 type service struct {
@@ -474,7 +478,7 @@ func (s *service) SubmitPenilaian(ctx context.Context, actor middleware.Actor, i
 
 		if semuaLengkap {
 			// BR-11: Hitung dan simpan nilai_akhir dan grade_huruf
-			nilaiAkhir, gradeHuruf := s.calculator.Hitung(nilaiCalcItems)
+			nilaiAkhir, gradeHuruf := s.calculator.HitungProgram(peserta.JenisProgram, nilaiCalcItems)
 			if err := s.repo.UpdateNilaiAkhir(ctx, tx, idPendaftaran, nilaiAkhir, gradeHuruf); err != nil {
 				return fmt.Errorf("simpan nilai akhir: %w", err)
 			}
@@ -618,7 +622,7 @@ func (s *service) HitungNilaiManual(ctx context.Context, actor middleware.Actor,
 			})
 		}
 
-		nilaiAkhir, gradeHuruf := s.calculator.Hitung(nilaiCalcItems)
+		nilaiAkhir, gradeHuruf := s.calculator.HitungProgram(peserta.JenisProgram, nilaiCalcItems)
 		if err := s.repo.UpdateNilaiAkhir(ctx, tx, idPendaftaran, nilaiAkhir, gradeHuruf); err != nil {
 			return fmt.Errorf("simpan nilai akhir: %w", err)
 		}
@@ -639,3 +643,118 @@ func (s *service) HitungNilaiManual(ctx context.Context, actor middleware.Actor,
 
 	return &res, nil
 }
+
+// GetVerifikasiPenguji mengambil status verifikasi kelulusan oleh dosen penguji untuk program magang (Gambar 4).
+func (s *service) GetVerifikasiPenguji(ctx context.Context, actor middleware.Actor, idPendaftaran int) (*VerifikasiPengujiResponse, error) {
+	rel, err := s.accessSvc.Resolve(ctx, actor, idPendaftaran)
+	if err != nil {
+		return nil, err
+	}
+
+	peserta, err := s.repo.GetPesertaPenilaianInfo(ctx, s.pool, idPendaftaran)
+	if err != nil {
+		return nil, fmt.Errorf("ambil data peserta: %w", err)
+	}
+	if peserta == nil {
+		return nil, httpx.NotFound("PENDAFTARAN_TIDAK_DITEMUKAN", "pendaftaran tidak ditemukan")
+	}
+
+	nim, namaMhs, idDosen, namaDosen, err := s.repo.GetMahasiswaDanPengujiInfo(ctx, s.pool, idPendaftaran)
+	if err != nil {
+		return nil, fmt.Errorf("ambil info mahasiswa dan dosen penguji: %w", err)
+	}
+
+	kp, err := s.repo.GetKelulusanPengujiByPeserta(ctx, s.pool, idPendaftaran)
+	if err != nil {
+		return nil, fmt.Errorf("ambil data kelulusan penguji: %w", err)
+	}
+
+	canVerify := (rel == pendaftaran.RelPenguji || actor.HasRole("admin"))
+
+	res := &VerifikasiPengujiResponse{
+		PendaftaranID:    idPendaftaran,
+		NIM:              nim,
+		NamaMahasiswa:    namaMhs,
+		JenisProgram:     peserta.JenisProgram,
+		IDDosenPenguji:   idDosen,
+		NamaDosenPenguji: namaDosen,
+		NilaiAkhir:       peserta.NilaiAkhir,
+		GradeHuruf:       peserta.GradeHuruf,
+		CanVerify:        canVerify,
+	}
+
+	if kp != nil {
+		res.StatusKelulusan = kp.StatusKelulusan
+		res.Catatan = kp.Catatan
+		tgl := kp.UpdatedAt.Format("2006-01-02 15:04:05")
+		res.TanggalVerifikasi = &tgl
+	}
+
+	return res, nil
+}
+
+// SubmitVerifikasiPenguji menyimpan status kelulusan peserta oleh dosen penguji (Gambar 4).
+func (s *service) SubmitVerifikasiPenguji(ctx context.Context, actor middleware.Actor, idPendaftaran int, req SubmitVerifikasiPengujiRequest, ip, ua string) (*VerifikasiPengujiResponse, error) {
+	rel, err := s.accessSvc.Resolve(ctx, actor, idPendaftaran)
+	if err != nil {
+		return nil, err
+	}
+
+	if rel != pendaftaran.RelPenguji && !actor.HasRole("admin") {
+		return nil, httpx.Forbidden("AKSES_DITOLAK", "hanya dosen penguji yang ditugaskan atau admin yang dapat memverifikasi kelulusan")
+	}
+
+	status := strings.TrimSpace(req.StatusKelulusan)
+	if status != "Lulus" && status != "Tidak Lulus" {
+		return nil, httpx.Unprocessable("STATUS_KELULUSAN_TIDAK_VALID", "status kelulusan harus bernilai 'Lulus' atau 'Tidak Lulus'")
+	}
+
+	peserta, err := s.repo.GetPesertaPenilaianInfo(ctx, s.pool, idPendaftaran)
+	if err != nil {
+		return nil, fmt.Errorf("ambil data peserta: %w", err)
+	}
+	if peserta == nil {
+		return nil, httpx.NotFound("PENDAFTARAN_TIDAK_DITEMUKAN", "pendaftaran tidak ditemukan")
+	}
+
+	if peserta.IDDosenPenguji == nil {
+		return nil, httpx.Unprocessable("DOSEN_PENGUJI_BELUM_DITUGASKAN", "dosen penguji belum ditugaskan pada pendaftaran ini")
+	}
+
+	kp := &KelulusanPenguji{
+		IDPesertaProgram: idPendaftaran,
+		IDDosenPenguji:   *peserta.IDDosenPenguji,
+		StatusKelulusan:  status,
+		Catatan:          strings.TrimSpace(req.Catatan),
+	}
+
+	if err := s.repo.UpsertKelulusanPenguji(ctx, s.pool, kp); err != nil {
+		return nil, fmt.Errorf("simpan kelulusan penguji: %w", err)
+	}
+
+	if s.logger != nil {
+		_ = s.logger.Log(ctx, actor.UserID, "submit_verifikasi_penguji", true, ip, ua)
+	}
+
+	nim, namaMhs, idDosen, namaDosen, err := s.repo.GetMahasiswaDanPengujiInfo(ctx, s.pool, idPendaftaran)
+	if err != nil {
+		return nil, fmt.Errorf("ambil info mahasiswa dan dosen penguji: %w", err)
+	}
+
+	tgl := kp.UpdatedAt.Format("2006-01-02 15:04:05")
+	return &VerifikasiPengujiResponse{
+		PendaftaranID:     idPendaftaran,
+		NIM:               nim,
+		NamaMahasiswa:     namaMhs,
+		JenisProgram:      peserta.JenisProgram,
+		IDDosenPenguji:    idDosen,
+		NamaDosenPenguji:  namaDosen,
+		StatusKelulusan:   kp.StatusKelulusan,
+		Catatan:           kp.Catatan,
+		TanggalVerifikasi: &tgl,
+		NilaiAkhir:        peserta.NilaiAkhir,
+		GradeHuruf:        peserta.GradeHuruf,
+		CanVerify:         true,
+	}, nil
+}
+

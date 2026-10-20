@@ -987,15 +987,24 @@ func TestSetDosenPembimbing_BusinessRules(t *testing.T) {
 		assert.Equal(t, "DOSEN_TIDAK_DITEMUKAN", appErr.Code)
 	})
 
-	t.Run("BR-07: gagal id_dosen pembimbing sama dengan id_dosen_penguji (422)", func(t *testing.T) {
-		_, _, svc := setupTest()
-		// Pendaftaran 1 memiliki IDDosenPenguji = 200
-		_, err := svc.SetDosenPembimbing(ctx, actorAdmin, 1, pendaftaran.SetDosenPembimbingRequest{IDDosen: 200}, "127.0.0.1", "agent")
+	t.Run("BR-07: gagal id_dosen pembimbing sama dengan id_dosen_penguji pada asistensi_mengajar (422)", func(t *testing.T) {
+		repo, _, svc := setupTest()
+		// Pendaftaran 2 adalah asistensi_mengajar, set IDDosenPenguji = 200
+		repo.pesertas[2].IDDosenPenguji = ptrInt(200)
+		_, err := svc.SetDosenPembimbing(ctx, actorAdmin, 2, pendaftaran.SetDosenPembimbingRequest{IDDosen: 200}, "127.0.0.1", "agent")
 		require.Error(t, err)
 		var appErr *httpx.AppError
 		require.True(t, errors.As(err, &appErr))
 		assert.Equal(t, 422, appErr.HTTPStatus)
 		assert.Equal(t, "DOSEN_PEMBIMBING_SAMA_DENGAN_PENGUJI", appErr.Code)
+	})
+
+	t.Run("sukses: dosen pembimbing sama dengan penguji pada program magang", func(t *testing.T) {
+		repo, _, svc := setupTest()
+		// Pendaftaran 1 (magang) memiliki IDDosenPenguji = 200, diizinkan merangkap
+		_, err := svc.SetDosenPembimbing(ctx, actorAdmin, 1, pendaftaran.SetDosenPembimbingRequest{IDDosen: 200}, "127.0.0.1", "agent")
+		require.NoError(t, err)
+		assert.Equal(t, ptrInt(200), repo.pesertas[1].IDDosenPembimbing)
 	})
 
 	t.Run("sukses: pegawai menetapkan dosen pada pendaftaran magang dan dicatat di log_aktivitas", func(t *testing.T) {
@@ -1287,13 +1296,23 @@ func TestSetDosenPenguji_BusinessRules(t *testing.T) {
 
 	t.Run("BR-07: gagal id_dosen penguji sama dengan id_dosen_pembimbing (422)", func(t *testing.T) {
 		_, _, svc := setupTest()
-		// Pendaftaran 1 memiliki IDDosenPembimbing = 100
+		// Pendaftaran 1 memiliki IDDosenPembimbing = 100 (asistensi_mengajar)
 		_, err := svc.SetDosenPenguji(ctx, actorAdmin, 1, pendaftaran.SetDosenPengujiRequest{IDDosen: 100}, "127.0.0.1", "agent")
 		require.Error(t, err)
 		var appErr *httpx.AppError
 		require.True(t, errors.As(err, &appErr))
 		assert.Equal(t, 422, appErr.HTTPStatus)
 		assert.Equal(t, "DOSEN_PEMBIMBING_SAMA_DENGAN_PENGUJI", appErr.Code)
+	})
+
+	t.Run("sukses: dosen penguji sama dengan pembimbing pada program magang", func(t *testing.T) {
+		repo, _, svc := setupTest()
+		// Ubah jenis program pendaftaran 1 menjadi magang
+		repo.pesertas[1].JenisProgram = "magang"
+		detail, err := svc.SetDosenPenguji(ctx, actorAdmin, 1, pendaftaran.SetDosenPengujiRequest{IDDosen: 100}, "127.0.0.1", "agent")
+		require.NoError(t, err)
+		require.NotNil(t, detail)
+		assert.Equal(t, ptrInt(100), repo.pesertas[1].IDDosenPenguji)
 	})
 
 	t.Run("sukses: admin menetapkan dosen penguji dan dicatat di log_aktivitas", func(t *testing.T) {

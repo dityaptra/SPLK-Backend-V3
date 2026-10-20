@@ -116,3 +116,26 @@ type HitungNilaiManualResponse struct {
 	GradeHuruf    string  `json:"grade_huruf"`
 	Pesan         string  `json:"pesan"`
 }
+
+// SubmitVerifikasiPengujiRequest payload input penentuan kelulusan oleh dosen penguji (Gambar 4).
+type SubmitVerifikasiPengujiRequest struct {
+	StatusKelulusan string `json:"status_kelulusan" binding:"required"` // "Lulus" atau "Tidak Lulus"
+	Catatan         string `json:"catatan"`
+}
+
+// VerifikasiPengujiResponse respon tampilan halaman verifikasi kelulusan dosen penguji.
+type VerifikasiPengujiResponse struct {
+	PendaftaranID     int      `json:"pendaftaran_id"`
+	NIM               string   `json:"nim"`
+	NamaMahasiswa     string   `json:"nama_mahasiswa"`
+	JenisProgram      string   `json:"jenis_program"`
+	IDDosenPenguji    *int     `json:"id_dosen_penguji,omitempty"`
+	NamaDosenPenguji  *string  `json:"nama_dosen_penguji,omitempty"`
+	StatusKelulusan   string   `json:"status_kelulusan"` // "Lulus", "Tidak Lulus", atau "" (belum diverifikasi)
+	Catatan           string   `json:"catatan"`
+	TanggalVerifikasi *string  `json:"tanggal_verifikasi,omitempty"`
+	NilaiAkhir        *float64 `json:"nilai_akhir,omitempty"`
+	GradeHuruf        *string  `json:"grade_huruf,omitempty"`
+	CanVerify         bool     `json:"can_verify"`
+}
+

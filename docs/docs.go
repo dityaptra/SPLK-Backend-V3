@@ -4837,6 +4837,108 @@ const docTemplate = `{
                 }
             }
         },
+        "/pendaftaran/{id}/verifikasi-penguji": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mengambil data verifikasi kelulusan mahasiswa magang oleh dosen penguji",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Penilaian"
+                ],
+                "summary": "Ambil form/status verifikasi kelulusan dosen penguji (Gambar 4)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID Pendaftaran",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/penilaian.VerifikasiPengujiResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Menyimpan keputusan status kelulusan (Lulus / Tidak Lulus) dan catatan oleh dosen penguji pada program magang",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Penilaian"
+                ],
+                "summary": "Simpan penentuan kelulusan oleh dosen penguji (Gambar 4)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID Pendaftaran",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Data verifikasi kelulusan",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/penilaian.SubmitVerifikasiPengujiRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/penilaian.VerifikasiPengujiResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/pengumuman": {
             "get": {
                 "security": [
@@ -7051,6 +7153,21 @@ const docTemplate = `{
                 }
             }
         },
+        "penilaian.SubmitVerifikasiPengujiRequest": {
+            "type": "object",
+            "required": [
+                "status_kelulusan"
+            ],
+            "properties": {
+                "catatan": {
+                    "type": "string"
+                },
+                "status_kelulusan": {
+                    "description": "\"Lulus\" atau \"Tidak Lulus\"",
+                    "type": "string"
+                }
+            }
+        },
         "penilaian.UpdateInstrumenRequest": {
             "type": "object",
             "properties": {
@@ -7064,6 +7181,48 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role_penilai": {
+                    "type": "string"
+                }
+            }
+        },
+        "penilaian.VerifikasiPengujiResponse": {
+            "type": "object",
+            "properties": {
+                "can_verify": {
+                    "type": "boolean"
+                },
+                "catatan": {
+                    "type": "string"
+                },
+                "grade_huruf": {
+                    "type": "string"
+                },
+                "id_dosen_penguji": {
+                    "type": "integer"
+                },
+                "jenis_program": {
+                    "type": "string"
+                },
+                "nama_dosen_penguji": {
+                    "type": "string"
+                },
+                "nama_mahasiswa": {
+                    "type": "string"
+                },
+                "nilai_akhir": {
+                    "type": "number"
+                },
+                "nim": {
+                    "type": "string"
+                },
+                "pendaftaran_id": {
+                    "type": "integer"
+                },
+                "status_kelulusan": {
+                    "description": "\"Lulus\", \"Tidak Lulus\", atau \"\" (belum diverifikasi)",
+                    "type": "string"
+                },
+                "tanggal_verifikasi": {
                     "type": "string"
                 }
             }

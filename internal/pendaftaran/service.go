@@ -447,8 +447,8 @@ func (s *pendaftaranService) SetDosenPembimbing(ctx context.Context, actor middl
 		return nil, httpx.Unprocessable("DOSEN_TIDAK_DITEMUKAN", "dosen pembimbing tidak ditemukan")
 	}
 
-	// 4. Validasi BR-07: id_dosen <> id_dosen_penguji
-	if peserta.IDDosenPenguji != nil && *peserta.IDDosenPenguji == req.IDDosen {
+	// 4. Validasi BR-07: id_dosen <> id_dosen_penguji (khusus non-magang; untuk magang diizinkan merangkap)
+	if peserta.JenisProgram != "magang" && peserta.IDDosenPenguji != nil && *peserta.IDDosenPenguji == req.IDDosen {
 		return nil, httpx.Unprocessable("DOSEN_PEMBIMBING_SAMA_DENGAN_PENGUJI", "dosen pembimbing tidak boleh sama dengan dosen penguji")
 	}
 
@@ -589,8 +589,8 @@ func (s *pendaftaranService) SetDosenPenguji(ctx context.Context, actor middlewa
 		return nil, httpx.Unprocessable("DOSEN_TIDAK_DITEMUKAN", "dosen penguji tidak ditemukan")
 	}
 
-	// 4. Validasi BR-07: id_dosen <> id_dosen_pembimbing
-	if peserta.IDDosenPembimbing != nil && *peserta.IDDosenPembimbing == req.IDDosen {
+	// 4. Validasi BR-07: id_dosen <> id_dosen_pembimbing (khusus non-magang; untuk magang diizinkan merangkap)
+	if peserta.JenisProgram != "magang" && peserta.IDDosenPembimbing != nil && *peserta.IDDosenPembimbing == req.IDDosen {
 		return nil, httpx.Unprocessable("DOSEN_PEMBIMBING_SAMA_DENGAN_PENGUJI", "dosen penguji tidak boleh sama dengan dosen pembimbing")
 	}
 

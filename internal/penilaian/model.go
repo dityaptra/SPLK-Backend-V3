@@ -64,3 +64,15 @@ type NilaiDetail struct {
 	Catatan      *string
 	TanggalNilai time.Time
 }
+
+// KelulusanPenguji merepresentasikan hasil penentuan kelulusan oleh dosen penguji untuk program magang (Gambar 4).
+type KelulusanPenguji struct {
+	ID               int       `json:"id"`
+	IDPesertaProgram int       `json:"id_peserta_program"`
+	IDDosenPenguji   int       `json:"id_dosen_penguji"`
+	StatusKelulusan  string    `json:"status_kelulusan"` // "Lulus" atau "Tidak Lulus"
+	Catatan          string    `json:"catatan"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+

@@ -330,3 +330,78 @@ func (h *Handler) HitungNilaiManual(c *gin.Context) {
 
 	httpx.OK(c, res)
 }
+
+// GetVerifikasiPenguji godoc
+// @Summary Ambil form/status verifikasi kelulusan dosen penguji (Gambar 4)
+// @Description Mengambil data verifikasi kelulusan mahasiswa magang oleh dosen penguji
+// @Tags Penilaian
+// @Security BearerAuth
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Success 200 {object} VerifikasiPengujiResponse
+// @Failure 403 {object} httpx.AppError
+// @Failure 404 {object} httpx.AppError
+// @Router /pendaftaran/{id}/verifikasi-penguji [get]
+func (h *Handler) GetVerifikasiPenguji(c *gin.Context) {
+	actor, ok := middleware.ActorFrom(c)
+	if !ok {
+		httpx.WriteError(c, httpx.Unauthorized("UNAUTHORIZED", "autentikasi diperlukan"))
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		httpx.WriteError(c, httpx.BadRequest("ID_TIDAK_VALID", "parameter id harus berupa angka positif"))
+		return
+	}
+
+	res, err := h.svc.GetVerifikasiPenguji(c.Request.Context(), actor, id)
+	if err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	httpx.OK(c, res)
+}
+
+// SubmitVerifikasiPenguji godoc
+// @Summary Simpan penentuan kelulusan oleh dosen penguji (Gambar 4)
+// @Description Menyimpan keputusan status kelulusan (Lulus / Tidak Lulus) dan catatan oleh dosen penguji pada program magang
+// @Tags Penilaian
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID Pendaftaran"
+// @Param request body SubmitVerifikasiPengujiRequest true "Data verifikasi kelulusan"
+// @Success 200 {object} VerifikasiPengujiResponse
+// @Failure 403 {object} httpx.AppError
+// @Failure 422 {object} httpx.AppError
+// @Router /pendaftaran/{id}/verifikasi-penguji [post]
+func (h *Handler) SubmitVerifikasiPenguji(c *gin.Context) {
+	actor, ok := middleware.ActorFrom(c)
+	if !ok {
+		httpx.WriteError(c, httpx.Unauthorized("UNAUTHORIZED", "autentikasi diperlukan"))
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		httpx.WriteError(c, httpx.BadRequest("ID_TIDAK_VALID", "parameter id harus berupa angka positif"))
+		return
+	}
+
+	var req SubmitVerifikasiPengujiRequest
+	if err := httpx.BindJSON(c, &req); err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	res, err := h.svc.SubmitVerifikasiPenguji(c.Request.Context(), actor, id, req, c.ClientIP(), c.Request.UserAgent())
+	if err != nil {
+		httpx.WriteError(c, err)
+		return
+	}
+
+	httpx.OK(c, res)
+}
+

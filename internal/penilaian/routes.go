@@ -21,4 +21,9 @@ func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
 	rg.GET("/pendaftaran/:id/form-penilaian", h.GetFormPenilaian)
 	rg.POST("/pendaftaran/:id/penilaian", h.SubmitPenilaian)
 	rg.GET("/pendaftaran/:id/nilai", h.GetNilai)
+
+	// Verifikasi Kelulusan Penguji (Magang - Gambar 4)
+	rg.GET("/pendaftaran/:id/verifikasi-penguji", h.GetVerifikasiPenguji)
+	rg.POST("/pendaftaran/:id/verifikasi-penguji", h.SubmitVerifikasiPenguji)
 }
+

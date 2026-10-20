@@ -22,6 +22,7 @@ type mockPenilaianRepo struct {
 	pesertas   map[int]*penilaian.PesertaPenilaianInfo
 	penilaians map[string]*penilaian.Penilaian // key: "idPeserta_idInstrumen_idPenilai"
 	userRoles  map[string]int                  // key: "idPeserta_role" -> userID
+	kelulusans map[int]*penilaian.KelulusanPenguji
 	nextInstID int
 	nextPenID  int
 }
@@ -32,6 +33,7 @@ func newMockPenilaianRepo() *mockPenilaianRepo {
 		pesertas:   make(map[int]*penilaian.PesertaPenilaianInfo),
 		penilaians: make(map[string]*penilaian.Penilaian),
 		userRoles:  make(map[string]int),
+		kelulusans: make(map[int]*penilaian.KelulusanPenguji),
 		nextInstID: 1,
 		nextPenID:  1,
 	}
@@ -178,6 +180,30 @@ func (m *mockPenilaianRepo) UpdateNilaiAkhir(ctx context.Context, tx pgx.Tx, idP
 	p.NilaiAkhir = &nilaiAkhir
 	p.GradeHuruf = &gradeHuruf
 	return nil
+}
+
+func (m *mockPenilaianRepo) GetKelulusanPengujiByPeserta(ctx context.Context, db database.DBTX, idPeserta int) (*penilaian.KelulusanPenguji, error) {
+	k, ok := m.kelulusans[idPeserta]
+	if !ok {
+		return nil, nil
+	}
+	cp := *k
+	return &cp, nil
+}
+
+func (m *mockPenilaianRepo) UpsertKelulusanPenguji(ctx context.Context, db database.DBTX, k *penilaian.KelulusanPenguji) error {
+	k.ID = 1
+	k.CreatedAt = time.Now()
+	k.UpdatedAt = time.Now()
+	stored := *k
+	m.kelulusans[k.IDPesertaProgram] = &stored
+	return nil
+}
+
+func (m *mockPenilaianRepo) GetMahasiswaDanPengujiInfo(ctx context.Context, db database.DBTX, idPeserta int) (nim, namaMhs string, idDosen *int, namaDosen *string, err error) {
+	dosenID := 20
+	dosenNama := "Dr. Penguji"
+	return "2115051001", "Mahasiswa Test", &dosenID, &dosenNama, nil
 }
 
 type mockAccessService struct {
@@ -456,6 +482,121 @@ func TestPenilaian_BusinessRules(t *testing.T) {
 		require.True(t, errorsAs(err, &appErr))
 		assert.Equal(t, 422, appErr.HTTPStatus)
 		assert.Equal(t, "PENILAIAN_BELUM_LENGKAP", appErr.Code)
+	})
+
+	t.Run("Magang: Hitung nilai akhir dengan proporsi 60% pembimbing dan 40% mentor", func(t *testing.T) {
+		repo := newMockPenilaianRepo()
+		accessSvc := newMockAccessService()
+		svc := penilaian.NewService(nil, repo, accessSvc, nil, nil)
+		ctx := context.Background()
+
+		pesertaID := 10
+		idDosen := 101
+		idLapangan := 102
+		repo.pesertas[pesertaID] = &penilaian.PesertaPenilaianInfo{
+			ID:                   pesertaID,
+			IDMahasiswa:          1,
+			JenisProgram:         "magang",
+			Status:               pendaftaran.StatusSelesai,
+			IDDosenPembimbing:    &idDosen,
+			IDPembimbingLapangan: &idLapangan,
+		}
+
+		actorPembimbing := middleware.Actor{UserID: 201, Roles: []string{"dosen"}}
+		actorLapangan := middleware.Actor{UserID: 202, Roles: []string{"pembimbing_lapangan"}}
+
+		accessSvc.relations[fmt.Sprintf("%d_%d", actorPembimbing.UserID, pesertaID)] = pendaftaran.RelPembimbing
+		accessSvc.relations[fmt.Sprintf("%d_%d", actorLapangan.UserID, pesertaID)] = pendaftaran.RelLapangan
+
+		repo.userRoles[fmt.Sprintf("%d_%s", pesertaID, penilaian.RoleDosenPembimbing)] = actorPembimbing.UserID
+		repo.userRoles[fmt.Sprintf("%d_%s", pesertaID, penilaian.RolePembimbingLapangan)] = actorLapangan.UserID
+
+		// Instrumen Pembimbing (Total 100%)
+		inst1 := &penilaian.InstrumenPenilaian{ID: 1, JenisProgram: "magang", NamaAspek: "Pembimbingan", Bobot: 100, RolePenilai: penilaian.RoleDosenPembimbing}
+		repo.instrumens[1] = inst1
+
+		// Instrumen Lapangan (Total 100%)
+		inst2 := &penilaian.InstrumenPenilaian{ID: 2, JenisProgram: "magang", NamaAspek: "Kinerja Lapangan", Bobot: 100, RolePenilai: penilaian.RolePembimbingLapangan}
+		repo.instrumens[2] = inst2
+
+		// Pembimbing mengisi nilai 80
+		nilaiPemb := 80.0
+		res1, err := svc.SubmitPenilaian(ctx, actorPembimbing, pesertaID, penilaian.SubmitPenilaianRequest{
+			Items: []penilaian.SubmitPenilaianItem{
+				{IDInstrumen: 1, Nilai: &nilaiPemb},
+			},
+		}, "127.0.0.1", "test")
+		require.NoError(t, err)
+		assert.False(t, res1.SemuaInstrumenTerisi)
+
+		// Mentor lapangan mengisi nilai 90
+		nilaiLap := 90.0
+		res2, err := svc.SubmitPenilaian(ctx, actorLapangan, pesertaID, penilaian.SubmitPenilaianRequest{
+			Items: []penilaian.SubmitPenilaianItem{
+				{IDInstrumen: 2, Nilai: &nilaiLap},
+			},
+		}, "127.0.0.1", "test")
+		require.NoError(t, err)
+		assert.True(t, res2.SemuaInstrumenTerisi)
+		require.NotNil(t, res2.NilaiAkhir)
+		// 60% * 80 + 40% * 90 = 48 + 36 = 84.0
+		assert.Equal(t, 84.0, *res2.NilaiAkhir)
+		require.NotNil(t, res2.GradeHuruf)
+		assert.Equal(t, "B", *res2.GradeHuruf)
+	})
+
+	t.Run("Verifikasi Penguji: Submit dan Get status kelulusan (Gambar 4)", func(t *testing.T) {
+		repo := newMockPenilaianRepo()
+		accessSvc := newMockAccessService()
+		svc := penilaian.NewService(nil, repo, accessSvc, nil, nil)
+		ctx := context.Background()
+
+		pesertaID := 15
+		idPenguji := 105
+		repo.pesertas[pesertaID] = &penilaian.PesertaPenilaianInfo{
+			ID:             pesertaID,
+			IDMahasiswa:    1,
+			JenisProgram:   "magang",
+			Status:         pendaftaran.StatusBerjalan,
+			IDDosenPenguji: &idPenguji,
+		}
+
+		actorPenguji := middleware.Actor{UserID: 205, Roles: []string{"dosen"}}
+		actorLain := middleware.Actor{UserID: 999, Roles: []string{"mahasiswa"}}
+		accessSvc.relations[fmt.Sprintf("%d_%d", actorPenguji.UserID, pesertaID)] = pendaftaran.RelPenguji
+		accessSvc.relations[fmt.Sprintf("%d_%d", actorLain.UserID, pesertaID)] = pendaftaran.RelMahasiswa
+
+		// Actor lain dilarang verifikasi
+		_, err := svc.SubmitVerifikasiPenguji(ctx, actorLain, pesertaID, penilaian.SubmitVerifikasiPengujiRequest{
+			StatusKelulusan: "Lulus",
+			Catatan:         "Mahasiswa lulus",
+		}, "127.0.0.1", "test")
+		require.Error(t, err)
+
+		// Input status tidak valid
+		_, err = svc.SubmitVerifikasiPenguji(ctx, actorPenguji, pesertaID, penilaian.SubmitVerifikasiPengujiRequest{
+			StatusKelulusan: "Abrakadabra",
+			Catatan:         "Catatan",
+		}, "127.0.0.1", "test")
+		require.Error(t, err)
+
+		// Sukses verifikasi oleh penguji
+		resSubmit, err := svc.SubmitVerifikasiPenguji(ctx, actorPenguji, pesertaID, penilaian.SubmitVerifikasiPengujiRequest{
+			StatusKelulusan: "Lulus",
+			Catatan:         "Mahasiswa lulus dengan sangat memuaskan saat ujian",
+		}, "127.0.0.1", "test")
+		require.NoError(t, err)
+		assert.Equal(t, "Lulus", resSubmit.StatusKelulusan)
+		assert.Equal(t, "Mahasiswa lulus dengan sangat memuaskan saat ujian", resSubmit.Catatan)
+		assert.True(t, resSubmit.CanVerify)
+
+		// Get verifikasi penguji
+		resGet, err := svc.GetVerifikasiPenguji(ctx, actorPenguji, pesertaID)
+		require.NoError(t, err)
+		assert.Equal(t, "Lulus", resGet.StatusKelulusan)
+		assert.Equal(t, "2115051001", resGet.NIM)
+		assert.Equal(t, "Mahasiswa Test", resGet.NamaMahasiswa)
+		assert.True(t, resGet.CanVerify)
 	})
 }
 

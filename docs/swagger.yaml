@@ -853,6 +853,16 @@ definitions:
       semua_instrumen_terisi:
         type: boolean
     type: object
+  penilaian.SubmitVerifikasiPengujiRequest:
+    properties:
+      catatan:
+        type: string
+      status_kelulusan:
+        description: '"Lulus" atau "Tidak Lulus"'
+        type: string
+    required:
+    - status_kelulusan
+    type: object
   penilaian.UpdateInstrumenRequest:
     properties:
       bobot:
@@ -862,6 +872,34 @@ definitions:
       nama_aspek:
         type: string
       role_penilai:
+        type: string
+    type: object
+  penilaian.VerifikasiPengujiResponse:
+    properties:
+      can_verify:
+        type: boolean
+      catatan:
+        type: string
+      grade_huruf:
+        type: string
+      id_dosen_penguji:
+        type: integer
+      jenis_program:
+        type: string
+      nama_dosen_penguji:
+        type: string
+      nama_mahasiswa:
+        type: string
+      nilai_akhir:
+        type: number
+      nim:
+        type: string
+      pendaftaran_id:
+        type: integer
+      status_kelulusan:
+        description: '"Lulus", "Tidak Lulus", atau "" (belum diverifikasi)'
+        type: string
+      tanggal_verifikasi:
         type: string
     type: object
   periode.CreatePeriodeRequest:
@@ -4540,6 +4578,73 @@ paths:
       security:
       - BearerAuth: []
       summary: Kirim penilaian peserta (penilai sah)
+      tags:
+      - Penilaian
+  /pendaftaran/{id}/verifikasi-penguji:
+    get:
+      description: Mengambil data verifikasi kelulusan mahasiswa magang oleh dosen
+        penguji
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/penilaian.VerifikasiPengujiResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Ambil form/status verifikasi kelulusan dosen penguji (Gambar 4)
+      tags:
+      - Penilaian
+    post:
+      consumes:
+      - application/json
+      description: Menyimpan keputusan status kelulusan (Lulus / Tidak Lulus) dan
+        catatan oleh dosen penguji pada program magang
+      parameters:
+      - description: ID Pendaftaran
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data verifikasi kelulusan
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/penilaian.SubmitVerifikasiPengujiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/penilaian.VerifikasiPengujiResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/httpx.AppError'
+      security:
+      - BearerAuth: []
+      summary: Simpan penentuan kelulusan oleh dosen penguji (Gambar 4)
       tags:
       - Penilaian
   /pengumuman:
