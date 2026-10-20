@@ -15,3 +15,8 @@ tmp/
 
 # Vendor (jika ada)
 vendor/
+
+# Abaikan semua file Markdown kecuali README
+*.md
+!README.md
+!readme.md
