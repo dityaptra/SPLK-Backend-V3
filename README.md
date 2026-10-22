@@ -17,7 +17,7 @@ Dibangun menggunakan Go, Gin Web Framework, PostgreSQL (pgx v5), arsitektur modu
 - [Docker & Containerisasi](#docker--containerisasi)
 - [Struktur Direktori](#struktur-direktori)
 - [Aktor & Kontrol Akses](#aktor--kontrol-akses)
-- [Asumsi Arsitektur (A1–A13)](#asumsi-arsitektur-a1a13)
+- [Asumsi Arsitektur (A1–A14)](#asumsi-arsitektur-a1a14)
 - [Pertanyaan Terbuka untuk Mentor & Tim](#pertanyaan-terbuka-untuk-mentor--tim)
 
 ---
@@ -39,11 +39,20 @@ Dibangun menggunakan Go, Gin Web Framework, PostgreSQL (pgx v5), arsitektur modu
    - Jurnal Harian Mahasiswa (validasi rentang periode, status pendaftaran berjalan, pencegahan tanggal masa depan).
    - Logbook Bimbingan Dosen Pembimbing (catatan progres, kendala, dan rekomendasi).
    - Pengunggahan & Unduh Dokumen (dukungan PDF, DOCX, gambar dengan proteksi download otorisasi).
-5. **Penilaian Terintegrasi 3 Penilai:**
-   - Form penilaian dinamis per jenis program & peranan penilai.
-   - Penilaian independen dan paralel oleh Dosen Pembimbing, Dosen Penguji, dan Pembimbing Lapangan.
-   - Kalkulasi otomatis nilai akhir (bobot tertimbang) dan grade huruf (A, B, C, D, E) saat instrumen lengkap, dilengkapi proteksi konkurensi database (`SELECT ... FOR UPDATE`).
-6. **Hardening & Keamanan:**
+5. **Penilaian Terintegrasi & Kelulusan:**
+   - **Skema Magang Real-World:**
+     - Komposisi nilai akhir: **60% Dosen Pembimbing** (4 aspek: Pembimbingan 20%, Blog 40%, Kelengkapan Dokumen 15%, Ujian & Laporan Akhir 25%) dan **40% Pembimbing Lapangan/Mentor** (14 butir kriteria skala penilaian).
+     - Dosen Pembimbing dan Penguji dapat **merangkap** (orang yang sama) khusus pada program magang.
+     - Penentuan kelulusan oleh Dosen Penguji: Halaman verifikasi khusus dengan keputusan radio button **`Lulus`** / **`Tidak Lulus`** dan input **Catatan**.
+   - **Skema AM & KKN:** Penilaian multi-penilai (Pembimbing, Penguji, Mitra) dengan rumus kumulatif bobot tertimbang dan penegakan BR-07 (Pembimbing $\neq$ Penguji).
+   - Kalkulasi otomatis nilai akhir dan grade huruf (A, B, C, D, E) saat instrumen lengkap, dilengkapi proteksi konkurensi database (`SELECT ... FOR UPDATE`).
+6. **Modul Pengumuman:**
+   - Pengumuman terarah berbasis role target (`admin`, `pegawai`, `dosen`, `mahasiswa`, `pembimbing_lapangan`) atau publik untuk semua pengguna (`target_role = NULL`).
+   - Dilengkapi pagination, pencarian, dan lampiran berkas dokumen.
+7. **Modul Surat Perjalanan Dinas (SPD / SPPD):**
+   - Penerbitan SPD untuk Dosen Pembimbing, Dosen Penguji, dan Mahasiswa oleh Pegawai (Kejur/PIC) atau Admin.
+   - Manajemen nomor surat, kota tujuan, tanggal berangkat/kembali, keperluan dinas, beban anggaran, status pelaksanaan, dan upload/download berkas surat tugas.
+8. **Hardening & Keamanan:**
    - Security Headers (HSTS, CSP, X-Frame-Options, X-XSS-Protection, MIME Sniffing protection).
    - Body Size Limit (10MB default) untuk menangkal Denial of Service upload payload besar.
    - In-memory Sliding Window Login Rate Limiter.
@@ -265,12 +274,14 @@ SPLK-backend-v3/
 │   ├── logbook/               # Logbook bimbingan dosen pembimbing
 │   ├── middleware/            # Auth JWT, RBAC, Recovery, CORS, Security Headers, Rate Limiter
 │   ├── pendaftaran/           # Pendaftaran program, penempatan, kesiapan & transisi status
+│   ├── pengumuman/            # Pengumuman terarah (target role, pagination, lampiran)
 │   ├── penilaian/             # Instrumen penilaian, submit nilai, bobot & kalkulator nilai akhir
 │   ├── periode/               # Manajemen periode program
 │   ├── platform/              # Library independen (clock, httpx, security, storage)
+│   ├── spd/                   # Surat Perjalanan Dinas (SPD/SPPD) bagi dosen & mahasiswa
 │   ├── tempat/                # Master mitra magang, sekolah AM, dan desa KKN
 │   └── user/                  # Manajemen profil Mahasiswa, Dosen, Pegawai, Admin, Pembimbing Lapangan
-├── migrations/                # SQL migration files (golang-migrate)
+├── migrations/                # SQL migration files (golang-migrate: init schema, patch, kelulusan penguji)
 ├── test/
 │   └── e2e/                   # Test integrasi end-to-end menyeluruh (Magang, AM, KKN)
 ├── Dockerfile                 # Multi-stage Docker build
@@ -285,23 +296,27 @@ SPLK-backend-v3/
 
 | Role Sistem | Profil Database | Hak Akses Utama |
 |---|---|---|
-| `admin` | `admin` | Full control: master data akademik, tempat, periode, penempatan AM/KKN, instrumen nilai, manajemen user. |
-| `pegawai` (Kejur/PIC) | `pegawai` | Verifikasi kesiapan, penetapan dosen pembimbing Magang, monitoring pendaftaran. |
-| `mahasiswa` | `mahasiswa` | Pendaftaran program, input penempatan magang mandiri, unggah MoU/proposal/proker, input jurnal harian, melihat nilai akhir pribadi. |
-| `dosen` | `dosen` | Membimbing peserta, mengisi logbook bimbingan, melakukan penilaian (sebagai Pembimbing dan/atau Penguji). |
-| `pembimbing_lapangan` | `pembimbing_lapangan` | Mentor magang, Guru Pamong AM, Kepala Desa KKN; melakukan penilaian kinerja lapangan mahasiswa bimbingannya. |
+| `admin` | `admin` | Full control: master data akademik, tempat, periode, penempatan AM/KKN, instrumen nilai, manajemen user, kelola pengumuman, dan penerbitan SPD. |
+| `pegawai` (Kejur/PIC) | `pegawai` | Verifikasi kesiapan, penetapan dosen pembimbing Magang, monitoring pendaftaran, penerbitan & pengelolaan Surat Perjalanan Dinas (SPD). |
+| `mahasiswa` | `mahasiswa` | Pendaftaran program, input penempatan magang mandiri, unggah MoU/proposal/proker, input jurnal harian, melihat nilai akhir pribadi, membaca pengumuman. |
+| `dosen` | `dosen` | Membimbing peserta, mengisi logbook bimbingan, melakukan penilaian (sebagai Pembimbing dan/atau Penguji), verifikasi penentuan kelulusan magang. |
+| `pembimbing_lapangan` | `pembimbing_lapangan` | Mentor magang, Guru Pamong AM, Kepala Desa KKN; melakukan penilaian kinerja lapangan mahasiswa bimbingannya, membaca pengumuman. |
 
 ---
 
-## Asumsi Arsitektur (A1–A13)
+## Asumsi Arsitektur (A1–A14)
 
-Sesuai kesepakatan spesifikasi MVP pada PRD Bagian 8, asumsi-asumsi berikut telah diimplementasikan dalam kode:
+Sesuai kesepakatan spesifikasi MVP dan arahan mentor lapangan, asumsi-asumsi berikut telah diimplementasikan dalam kode:
 
 - **A1 — Validasi KRS:** Validasi KRS ke sistem SIAKAD kampus di-stub (`KRSValidator` selalu mengembalikan `true`).
 - **A2 — Eligibilitas AM & KKN:** Validasi prasyarat SKS/IPK di-stub (`EligibilityChecker` selalu mengembalikan `true`).
 - **A3 — Autentikasi Mandiri:** Menggunakan autentikasi berbasis database internal (`username` dan `password_hash`), belum terhubung ke SSO Kampus/LDAP.
-- **A4 — Rumus Nilai Akhir:** Nilai akhir dihitung dengan rumus:
-  $$\text{Nilai Akhir} = \frac{\sum (\text{Nilai} \times \text{Bobot})}{\sum \text{Bobot}}$$
+- **A4 — Rumus Nilai Akhir:**
+  - **Program Magang:** Menggunakan proporsi 60% Dosen Pembimbing dan 40% Pembimbing Lapangan (Mentor):
+    $$\text{Nilai Akhir} = (0.60 \times \text{Nilai Pembimbing}) + (0.40 \times \text{Nilai Lapangan})$$
+    Dosen Penguji bertindak menentukan verifikasi kelulusan (`Lulus` / `Tidak Lulus`) dan catatan kelulusan.
+  - **Program Asistensi Mengajar (AM) & KKN:** Menggunakan akumulasi bobot tertimbang seluruh penilai sah:
+    $$\text{Nilai Akhir} = \frac{\sum (\text{Nilai} \times \text{Bobot})}{\sum \text{Bobot}}$$
 - **A5 — Konversi Grade Huruf:**
   - $\ge 85.00$ : **A**
   - $\ge 70.00$ : **B**
@@ -312,21 +327,21 @@ Sesuai kesepakatan spesifikasi MVP pada PRD Bagian 8, asumsi-asumsi berikut tela
 - **A7 — Transisi Berjalan Otomatis:** Perubahan status pendaftaran ke `berjalan` dievaluasi otomatis oleh mesin kesiapan sistem segera setelah seluruh syarat penempatan dan dokumen terpenuhi, tanpa menunggu tombol *approval* manual.
 - **A8 — Akun Mitra Lapangan:** Pembimbing lapangan (mentor/guru pamong/kepala desa) wajib memiliki akun user di sistem agar dapat menginput nilai secara resmi.
 - **A9 — Input Data AM & KKN:** Tidak dibuat tabel terpisah untuk "input data AM/KKN"; seluruh data peserta terpusat pada entitas `peserta_program`, dokumen proker pada `dokumen`, dan penempatan desa/sekolah pada `tempat_program`.
-- **A10 — Kewenangan Kejur/Pegawai:** Kejur direpresentasikan oleh role `pegawai` yang dapat mengelola penugasan pembimbing magang lintas jurusan.
+- **A10 — Kewenangan Kejur/Pegawai:** Kejur direpresentasikan oleh role `pegawai` yang dapat mengelola penugasan pembimbing magang lintas jurusan dan menerbitkan SPD.
 - **A11 — Multi-Pendaftaran Semester:** Mahasiswa diperkenankan mendaftar pada program yang berbeda jika periode pendaftaran aktif (dijaga oleh constraint unik per periode dan mahasiswa).
 - **A12 — Penyelesaian Periode:** Ketika admin menyelesaikan periode (`selesai`), seluruh pendaftaran berstatus `berjalan` otomatis menjadi `selesai`. Pendaftaran yang masih `diajukan` dan belum siap otomatis dinyatakan `ditolak`.
 - **A13 — Pengajuan Ulang:** Mahasiswa yang pendaftarannya berstatus `ditolak` berhak melakukan pengajuan ulang (`POST /pendaftaran/:id/ajukan-ulang`) selama periode pendaftaran masih dalam masa aktif.
+- **A14 — Perangkapan Dosen Magang:** Khusus untuk program magang, relaksasi aturan BR-07 memungkinkan satu dosen merangkap menjadi Dosen Pembimbing sekaligus Dosen Penguji untuk mahasiswa yang sama. Pada program Asistensi Mengajar dan KKN, aturan integritas BR-07 (Dosen Pembimbing $\neq$ Dosen Penguji) tetap ditegakkan secara ketat.
 
 ---
 
 ## Pertanyaan Terbuka untuk Mentor & Tim
 
-Untuk pengembangan rilis berikutnya pasca-MVP, beberapa poin berikut perlu dikonfirmasikan lebih lanjut:
-
 1. **Aturan Eligibilitas Riil:** Berapa batas minimal SKS lulus, IPK minimal, dan mata kuliah prasyarat wajib untuk masing-masing cabang program (AM dan KKN)?
-2. **Skema Pembobotan Nilai:** Apakah total bobot 100 berlaku per program secara kumulatif antar-penilai, atau masing-masing penilai memiliki skala 100 yang kemudian dikalikan persentase peran (misal: Mitra 40%, Pembimbing 35%, Penguji 25%)?
+2. **Skema Pembobotan Nilai:** *(Terjawab & Terimplementasi untuk Magang)* Proporsi nilai magang telah ditetapkan: 60% Pembimbing (4 aspek rubrik) dan 40% Mentor Lapangan (14 kriteria skala 1–4), dengan Dosen Penguji menentukan status kelulusan (Lulus/Tidak Lulus).
 3. **Penyediaan Akun Mitra Lapangan:** Apakah seluruh Kepala Desa, Guru Pamong, dan Mentor Industri akan dibuatkan akun langsung oleh UPA TIK, atau disediakan tautan penilaian temporer dengan token aman (magic link/invitation)?
 4. **Verifikasi Jurnal Harian:** Apakah entri jurnal harian mahasiswa memerlukan persetujuan (*approval/paraf digital*) berkala oleh dosen pembimbing atau mentor industri?
 5. **Restriksi Jurusan bagi PIC/Kejur:** Apakah akun Pegawai/Kejur nantinya wajib dibatasi hak aksesnya agar hanya bisa melihat dan menetapkan dosen pada mahasiswa yang berasal dari jurusannya sendiri?
 6. **Formulir Tambahan Spesifik:** Apakah ada atribut formulir khusus yang perlu diinputkan mahasiswa pada saat penempatan Asistensi Mengajar (misal: mata pelajaran yang diajar) atau KKN (misal: fokus bidang pengabdian desa)?
-7. **Surat Tugas & Perjalanan Dinas:** Apakah pencetakan Surat Tugas (SPPD) dan pengumuman penempatan akan diintegrasikan langsung di backend SPLK pada fase berikutnya?
+7. **Surat Tugas & Perjalanan Dinas & Pengumuman:** *(Terjawab & Terimplementasi)* Modul Surat Perjalanan Dinas (SPD) dan Modul Pengumuman berbasis target role telah selesai diimplementasikan di backend.
+
