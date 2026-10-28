@@ -1,22 +1,54 @@
-# Konfigurasi rahasia
+# Konfigurasi rahasia & environment lokal
 .env
+.env.*
+!.env.example
 
-# File unggahan
+# File unggahan & storage
 uploads/
 
-# Binary hasil build
+# Binary & executable hasil build
 bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+api
+seed
+
+# Test & coverage artifacts
+*.out
+coverage.txt
+coverage.html
 
 # File log
 *.log
 
-# Folder temporary (air)
+# Folder temporary & cache
 tmp/
+.cache/
 
 # Vendor (jika ada)
 vendor/
 
-# Abaikan semua file Markdown kecuali README
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Abaikan semua file Markdown kecuali README (termasuk di subdirektori)
 *.md
+**/*.md
 !README.md
 !readme.md
+!**/README.md
+!**/readme.md
+
